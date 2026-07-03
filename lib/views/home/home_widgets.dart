@@ -409,7 +409,7 @@ class _EcommerceProductCardState extends State<EcommerceProductCard> {
                     aspectRatio: 1.12,
                     child: Image(
                       image: _resolveImageProvider(widget.imageUrl),
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       errorBuilder: (context, error, stack) => Container(
                         color: theme.colorScheme.surfaceContainerHighest,
                         child: const Icon(

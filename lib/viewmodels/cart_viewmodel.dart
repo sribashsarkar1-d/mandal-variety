@@ -49,29 +49,12 @@ class CartViewModel extends BaseViewModel {
   /// - Subtotal >= 19: +30 delivery charge (unless Subtotal >= 99)
   double get deliveryCharge {
     if (isEmpty) return 0.0;
-    if (subtotal >= CartPricing.freeDeliveryThreshold) return 0.0;
-    if (subtotal >= CartPricing.deliveryChargeThreshold) {
-      return CartPricing.deliveryChargeAmount;
-    }
-    return 0.0;
+    return CartPricing.deliveryChargeAmount;
   }
 
-  double get handlingCharge {
-    if (isEmpty) return 0.0;
-    if (subtotal >= CartPricing.freeDeliveryThreshold) {
-      return CartPricing.handlingChargeAmount;
-    }
-    return 0.0;
-  }
+  double get handlingCharge => 0.0;
 
-  double get smallOrderSurcharge {
-    if (isEmpty) return 0.0;
-    if (subtotal < CartPricing.freeDeliveryThreshold &&
-        subtotal >= CartPricing.smallOrderThreshold) {
-      return CartPricing.smallOrderSurchargeAmount;
-    }
-    return 0.0;
-  }
+  double get smallOrderSurcharge => 0.0;
 
   double get totalFees => deliveryCharge + handlingCharge + smallOrderSurcharge;
 

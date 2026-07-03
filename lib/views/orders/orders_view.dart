@@ -812,7 +812,7 @@ class _AnimatedOrderCardState extends State<_AnimatedOrderCard>
                     const SizedBox(height: 32),
 
                     // Cancel button
-                    if (currentOrder.status?.toLowerCase() == 'pending' || (currentOrder.status ?? '').isEmpty) ...[
+                    if (currentOrder.status?.toLowerCase() == 'processing') ...[
                       AppButton.outline(
                         text: 'Cancel Order',
                         isFullWidth: true,

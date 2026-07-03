@@ -164,21 +164,10 @@ class _ProductGridCardState extends State<ProductGridCard> {
 
     setState(() => _isCartActionLoading = true);
     try {
-      final result = await CartCoordinator.instance.addItem(
-        CartItemModel(
-          productId: widget.product.id,
-          name: widget.product.name,
-          imageUrl: widget.product.imageUrl,
-          unitPrice: widget.product.price,
-          quantity: 1,
-        ),
+      await CartCoordinator.instance.setQuantity(
+        widget.product.id,
+        _cartQuantity + 1,
       );
-      if (!mounted) return;
-      if (result.success) {
-        AppSnackbar.success(context, result.message);
-      } else {
-        AppSnackbar.warning(context, result.message);
-      }
     } finally {
       if (mounted) {
         setState(() => _isCartActionLoading = false);
@@ -365,7 +354,7 @@ class _ProductGridCardState extends State<ProductGridCard> {
                       aspectRatio: 1.08,
                       child: Image(
                         image: _resolveImageProvider(widget.product.imageUrl),
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         errorBuilder: (context, error, stack) => Container(
                           color: theme.colorScheme.surfaceContainerHighest,
                           child: Icon(
@@ -539,7 +528,7 @@ class _ProductGridCardState extends State<ProductGridCard> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      AppCurrency.format(widget.product.price),
+                                      AppCurrency.format(widget.product.price, freeForZero: false),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppTextStyles.bodyMedium.copyWith(
@@ -552,6 +541,7 @@ class _ProductGridCardState extends State<ProductGridCard> {
                                       Text(
                                         AppCurrency.format(
                                           widget.product.originalPrice!,
+                                          freeForZero: false,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -686,12 +676,15 @@ class _CartQuantityStepper extends StatelessWidget {
     final onSurface = theme.colorScheme.onSurface;
 
     Widget iconBtn({required IconData icon, required VoidCallback onTap}) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: EdgeInsets.all(compact ? 6 : 8),
-          child: Icon(icon, size: 18, color: onSurface),
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: EdgeInsets.all(compact ? 6 : 8),
+            child: Icon(icon, size: 18, color: onSurface),
+          ),
         ),
       );
     }

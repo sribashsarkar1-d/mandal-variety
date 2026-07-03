@@ -123,7 +123,16 @@ class _HomeViewState extends State<HomeView> {
       final apiProducts = (products.data ?? const <Data>[])
           .asMap()
           .entries
-          .map((entry) => _mapApiProduct(entry.value, entry.key))
+          .map((entry) {
+             final item = entry.value;
+             if ((item.categoryName == null || item.categoryName!.trim().isEmpty) && item.categoryId != null) {
+                final match = apiCategories.where((c) => c.id == item.categoryId);
+                if (match.isNotEmpty) {
+                   item.categoryName = match.first.name;
+                }
+             }
+             return _mapApiProduct(item, entry.key);
+          })
           .toList(growable: false);
 
       if (!mounted) return;
@@ -262,6 +271,8 @@ class _HomeViewState extends State<HomeView> {
       isFastDelivery: isFastDelivery,
       freeDelivery: item.freeDelivery,
       isBestSeller: null,
+      categoryName: item.categoryName,
+      categoryId: item.categoryId,
     );
   }
 
@@ -309,6 +320,8 @@ class _HomeViewState extends State<HomeView> {
       isFastDelivery: isFastDelivery,
       freeDelivery: item.freeDelivery,
       isBestSeller: null,
+      categoryName: item.categoryName,
+      categoryId: item.categoryId,
     );
   }
 
@@ -387,7 +400,8 @@ class _HomeViewState extends State<HomeView> {
     final selected = _selectedCategoryName!.toLowerCase();
     return source
         .where((product) {
-          return product.category.displayName.toLowerCase() == selected;
+          final catName = (product.categoryName ?? product.category.displayName).toLowerCase();
+          return catName == selected;
         })
         .toList(growable: false);
   }
@@ -673,6 +687,11 @@ class _HomeViewState extends State<HomeView> {
   Widget _buildSearchResults(ThemeData theme) {
     final onSurface = theme.colorScheme.onSurface;
 
+    final q = _searchQuery.toLowerCase();
+    final matchingCategories = _apiCategories
+        .where((c) => (c.name ?? '').toLowerCase().contains(q))
+        .toList(growable: false);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       child: Column(
@@ -708,6 +727,37 @@ class _HomeViewState extends State<HomeView> {
                   )
                   .toList(growable: false),
             ),
+          ],
+          if (matchingCategories.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              'Categories',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: matchingCategories.map((c) {
+                return ActionChip(
+                  label: Text(c.name ?? ''),
+                  backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  onPressed: () {
+                    // Behave as if the user clicked the category from the main home view
+                    setState(() {
+                      _selectedCategoryName = c.name;
+                      _searchQuery = '';
+                    });
+                    // Unfocus search bar
+                    FocusScope.of(context).unfocus();
+                  },
+                );
+              }).toList(growable: false),
+            ),
+            const SizedBox(height: 14),
+            const Divider(),
           ],
           const SizedBox(height: 14),
           if (_searchLoading)

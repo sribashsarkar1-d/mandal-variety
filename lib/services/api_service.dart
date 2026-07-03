@@ -1053,10 +1053,23 @@ class ApiService {
   }
 
   String resolveImageUrl(String? imagePath) {
-    final raw = (imagePath ?? '').trim();
+    String raw = (imagePath ?? '').trim();
     if (raw.isEmpty) {
       debugPrint('Product Image URL resolved to: <empty>');
       return '';
+    }
+
+    // Handle case where imagePath is a JSON array string (e.g. '["/path.png"]')
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        final parsed = jsonDecode(raw);
+        if (parsed is List && parsed.isNotEmpty) {
+          raw = parsed.first.toString().trim();
+        }
+      } catch (_) {
+        // Fallback: strip brackets and quotes manually
+        raw = raw.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll("'", '').split(',').first.trim();
+      }
     }
 
     String resolved;

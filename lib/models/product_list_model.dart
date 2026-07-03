@@ -29,8 +29,8 @@ class Data {
   String? name;
   String? slug;
   String? description;
-  int? price;
-  int? discountPrice;
+  double? price;
+  double? discountPrice;
   String? sku;
   int? stockQuantity;
   int? categoryId;
@@ -99,8 +99,8 @@ class Data {
     description = json['description'];
     
     // Parse price fields correctly
-    price = _parseInt(json['price']);
-    discountPrice = _parseInt(json['discount_price']);
+    price = _parseDouble(json['price']);
+    discountPrice = _parseDouble(json['discount_price']);
     stockQuantity = _parseInt(json['stock_quantity']);
     categoryId = _parseInt(json['category_id']);
     isActive = _parseInt(json['is_active']);
@@ -145,8 +145,16 @@ class Data {
   static int? _parseInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;
-    if (value is String) return int.tryParse(value);
+    if (value is String) return double.tryParse(value)?.toInt();
     if (value is double) return value.toInt();
+    return null;
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
     return null;
   }
   

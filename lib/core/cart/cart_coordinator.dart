@@ -139,6 +139,9 @@ class CartCoordinator {
         ),
       );
 
+      // Optimistic update
+      await _repository.setQuantity(productId, safeQuantity);
+
       if (numericProductId != null) {
         bool remoteSuccess = false;
         try {
@@ -158,28 +161,8 @@ class CartCoordinator {
         }
 
         if (remoteSuccess) {
-          await _repository.upsertItem(
-            CartItemModel(
-              productId: existing.productId,
-              name: existing.name,
-              imageUrl: existing.imageUrl,
-              unitPrice: existing.unitPrice,
-              quantity: safeQuantity,
-            ),
-          );
           await _attemptSyncFromServer();
         }
-      } else {
-        // Mock item update
-        await _repository.upsertItem(
-          CartItemModel(
-            productId: existing.productId,
-            name: existing.name,
-            imageUrl: existing.imageUrl,
-            unitPrice: existing.unitPrice,
-            quantity: safeQuantity,
-          ),
-        );
       }
     }
   }
@@ -301,7 +284,7 @@ class CartCoordinator {
         CartItemModel(
           productId: productId,
           name: displayName,
-          imageUrl: item.images,
+          imageUrl: _apiService.resolveImageUrl(item.images),
           unitPrice: price,
           quantity: quantity,
         ),

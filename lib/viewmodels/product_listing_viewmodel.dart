@@ -1,6 +1,7 @@
 import '../data/models/product_model.dart';
 import '../core/network/network_error_utils.dart';
 import '../models/product_list_model.dart';
+import '../models/categories_model.dart';
 import '../services/api_service.dart';
 import 'base_viewmodel.dart';
 
@@ -136,11 +137,27 @@ class ProductListingViewModel extends BaseViewModel {
     setLoading(true);
     clearError();
     try {
-      final response = await _apiService.getProducts();
+      final responses = await Future.wait([
+        _apiService.getProducts(),
+        _apiService.getCategories(),
+      ]);
+      final response = responses[0] as ProductList;
+      final catResponse = responses[1] as Categories;
+      final categoryItems = catResponse.data ?? [];
+
       final mapped = (response.data ?? const <Data>[])
           .asMap()
           .entries
-          .map((entry) => _mapApiProduct(entry.value, entry.key))
+          .map((entry) {
+             final item = entry.value;
+             if ((item.categoryName == null || item.categoryName!.trim().isEmpty) && item.categoryId != null) {
+                final match = categoryItems.where((c) => c.id == item.categoryId);
+                if (match.isNotEmpty) {
+                   item.categoryName = match.first.name;
+                }
+             }
+             return _mapApiProduct(item, entry.key);
+          })
           .where((p) => p.category == category)
           .toList(growable: false);
 
@@ -203,6 +220,8 @@ class ProductListingViewModel extends BaseViewModel {
       isFastDelivery: isFastDelivery,
       freeDelivery: item.freeDelivery,
       isBestSeller: null,
+      categoryName: item.categoryName,
+      categoryId: item.categoryId,
     );
   }
 

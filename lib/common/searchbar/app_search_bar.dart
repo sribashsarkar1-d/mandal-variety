@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/platform_helper.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 /// Reusable SearchBar with built-in debouncing to avoid API spam.
 /// Resolves cleanly to CupertinoSearchTextField on iOS, and decorated TextField on Android.
@@ -39,6 +40,10 @@ class _AppSearchBarState extends State<AppSearchBar> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  bool _speechEnabled = false;
+
   bool _isTypingActive = false;
   int _currentHintIndex = 0;
   String _currentHintText = '';
@@ -52,6 +57,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
   void initState() {
     super.initState();
     _currentHintText = widget.hintText;
+    _initSpeech();
 
     final initial = widget.initialText;
     if (initial != null && initial.trim().isNotEmpty) {
@@ -105,6 +111,48 @@ class _AppSearchBarState extends State<AppSearchBar> {
         }
       }
     });
+  }
+
+  Future<void> _initSpeech() async {
+    _speechEnabled = await _speech.initialize(
+      onError: (val) => debugPrint('onSpeechError: $val'),
+      onStatus: (val) {
+        if (val == 'notListening' || val == 'done') {
+           if (mounted) setState(() => _isListening = false);
+        }
+      },
+    );
+    if (mounted) setState(() {});
+  }
+
+  void _startListening() async {
+    if (!_speechEnabled) {
+      _speechEnabled = await _speech.initialize();
+      if (!_speechEnabled) return;
+    }
+    await _speech.listen(onResult: (result) {
+      if (mounted) {
+        setState(() {
+          _controller.text = result.recognizedWords;
+          _hasText = _controller.text.isNotEmpty;
+        });
+        _onSearchChanged(result.recognizedWords);
+      }
+    });
+    if (mounted) setState(() => _isListening = true);
+  }
+
+  void _stopListening() async {
+    await _speech.stop();
+    if (mounted) setState(() => _isListening = false);
+  }
+
+  void _toggleListening() {
+    if (_isListening) {
+      _stopListening();
+    } else {
+      _startListening();
+    }
   }
 
   void _stopTypewriter() {
@@ -229,6 +277,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
     _typewriterTimer?.cancel();
     _controller.dispose();
     _focusNode.dispose();
+    _speech.cancel();
     super.dispose();
   }
 
@@ -239,16 +288,32 @@ class _AppSearchBarState extends State<AppSearchBar> {
     if (PlatformHelper.isIOS) {
       return TapRegion(
         onTapOutside: (_) => _dismissFocus(),
-        child: CupertinoSearchTextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          placeholder: _currentHintText.isEmpty
-              ? (widget.animatedHints?.first ?? widget.hintText)
-              : _currentHintText,
-          autofocus: widget.autofocus,
-          onChanged: _onSearchChanged,
-          onSubmitted: widget.onSubmitted ?? widget.onChanged,
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+        child: Row(
+          children: [
+            Expanded(
+              child: CupertinoSearchTextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                placeholder: _currentHintText.isEmpty
+                    ? (widget.animatedHints?.first ?? widget.hintText)
+                    : _currentHintText,
+                autofocus: widget.autofocus,
+                onChanged: _onSearchChanged,
+                onSubmitted: widget.onSubmitted ?? widget.onChanged,
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+              ),
+            ),
+            CupertinoButton(
+              padding: const EdgeInsets.only(left: 12),
+              minSize: 0,
+              onPressed: _toggleListening,
+              child: Icon(
+                _isListening ? CupertinoIcons.mic_fill : CupertinoIcons.mic,
+                size: 24,
+                color: _isListening ? theme.colorScheme.primary : CupertinoColors.systemGrey,
+              ),
+            ),
+          ],
         ),
       );
     } else {
@@ -265,15 +330,27 @@ class _AppSearchBarState extends State<AppSearchBar> {
                 ? '\u200B'
                 : _currentHintText, // Zero-width space to keep height steady
             prefixIcon: const Icon(Icons.search),
-            suffixIcon: _hasText
-                ? IconButton(
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_hasText)
+                  IconButton(
                     icon: const Icon(Icons.clear),
                     onPressed: () {
                       _controller.clear();
                       _onSearchChanged('');
                     },
-                  )
-                : null,
+                  ),
+                IconButton(
+                  icon: Icon(
+                    _isListening ? Icons.mic : Icons.mic_none,
+                    color: _isListening ? theme.colorScheme.primary : null,
+                  ),
+                  onPressed: _toggleListening,
+                ),
+                const SizedBox(width: 4),
+              ],
+            ),
             filled: true,
             fillColor: theme.colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(

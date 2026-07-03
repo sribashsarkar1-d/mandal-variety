@@ -46,7 +46,7 @@ class ProductCardWidget extends StatelessWidget {
                       : Image.network(
                           imageUrl,
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
                               _fallbackImage(context),
                           loadingBuilder: (context, child, loadingProgress) {

@@ -592,32 +592,8 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                                     onInfoTap: () {
                                       HapticFeedback.selectionClick();
                                       final s = AppCurrency.symbol;
-
-                                      final freeDelivery = CartPricing
-                                          .freeDeliveryThreshold
-                                          .toStringAsFixed(0);
-                                      final smallOrder = CartPricing
-                                          .smallOrderThreshold
-                                          .toStringAsFixed(0);
-                                      final freeDeliveryMax =
-                                          (CartPricing.freeDeliveryThreshold -
-                                                  0.01)
-                                              .toStringAsFixed(2);
-                                      final smallOrderMax =
-                                          (CartPricing.smallOrderThreshold -
-                                                  0.01)
-                                              .toStringAsFixed(2);
-                                      final deliveryFrom = CartPricing
-                                          .deliveryChargeThreshold
-                                          .toStringAsFixed(0);
                                       final deliveryCharge = CartPricing
                                           .deliveryChargeAmount
-                                          .toStringAsFixed(0);
-                                      final smallOrderCharge = CartPricing
-                                          .smallOrderSurchargeAmount
-                                          .toStringAsFixed(0);
-                                      final handlingCharge = CartPricing
-                                          .handlingChargeAmount
                                           .toStringAsFixed(0);
 
                                       AppDialog.showAlert(
@@ -625,14 +601,7 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                                         title: 'Delivery & Fees',
                                         message:
                                             'Pricing rules:\n\n'
-                                            '• $s$freeDelivery and above:\n'
-                                            '  - Delivery FREE\n'
-                                            '  - $s$handlingCharge handling charge\n\n'
-                                            '• $s$smallOrder to $s$freeDeliveryMax:\n'
-                                            '  - $s$smallOrderCharge small-order charge\n'
-                                            '  - $s$deliveryCharge delivery charge\n\n'
-                                            '• $s$deliveryFrom to $s$smallOrderMax:\n'
-                                            '  - $s$deliveryCharge delivery charge',
+                                            '• Flat $s$deliveryCharge delivery charge on all orders.',
                                       );
                                     },
                                   ),

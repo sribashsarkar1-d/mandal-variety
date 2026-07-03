@@ -109,6 +109,8 @@
 	<string>We use your location in the background for live service tracking when the app is minimized.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is needed for voice notes and in-app communication.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Speech recognition is required for voice search.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo access is needed to upload attachments and profile pictures.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

@@ -944,7 +944,7 @@ class _ImageGallery extends StatelessWidget {
                           tag: 'product_image_$url',
                           child: Image(
                             image: _resolveImageProvider(url),
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                             errorBuilder: (_, _, _) => Center(
                               child: Icon(
                                 Icons.image_not_supported_outlined,
@@ -1189,7 +1189,7 @@ class _PriceDisplay extends StatelessWidget {
       runSpacing: 6,
       children: [
         Text(
-          AppCurrency.format(price),
+          AppCurrency.format(price, freeForZero: false),
           style: AppTextStyles.heading2.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.primaryColor,
@@ -1197,7 +1197,7 @@ class _PriceDisplay extends StatelessWidget {
         ),
         if (hasDiscount)
           Text(
-            AppCurrency.format(originalPrice!),
+            AppCurrency.format(originalPrice!, freeForZero: false),
             style: AppTextStyles.bodyLarge.copyWith(
               decoration: TextDecoration.lineThrough,
               color: onSurface.withValues(alpha: 0.45),
@@ -1602,17 +1602,20 @@ class _BottomStepper extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            InkWell(
-              onTap: canDecrement ? onDecrement : null,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Icon(
-                  Icons.remove_rounded,
-                  size: 18,
-                  color: canDecrement
-                      ? onSurface.withValues(alpha: 0.9)
-                      : theme.disabledColor,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: canDecrement ? onDecrement : null,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(
+                    Icons.remove_rounded,
+                    size: 18,
+                    color: canDecrement
+                        ? onSurface.withValues(alpha: 0.9)
+                        : theme.disabledColor,
+                  ),
                 ),
               ),
             ),
@@ -1626,15 +1629,18 @@ class _BottomStepper extends StatelessWidget {
                 ),
               ),
             ),
-            InkWell(
-              onTap: onIncrement,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Icon(
-                  Icons.add_rounded,
-                  size: 18,
-                  color: onSurface.withValues(alpha: 0.9),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onIncrement,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 18,
+                    color: onSurface.withValues(alpha: 0.9),
+                  ),
                 ),
               ),
             ),

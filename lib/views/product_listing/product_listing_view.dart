@@ -427,48 +427,6 @@ class _ProductListingViewState extends State<ProductListingView> {
                   const SliverToBoxAdapter(child: SizedBox(height: 84)),
                 ],
               ),
-
-              ValueListenableBuilder<int>(
-                valueListenable: CartCoordinator.instance.itemCount,
-                builder: (context, itemCount, _) {
-                  return ValueListenableBuilder<double>(
-                    valueListenable: CartCoordinator.instance.subtotal,
-                    builder: (context, subtotal, _) {
-                      final remaining = CartPricing.remainingForFreeDelivery(
-                        subtotal,
-                      );
-                      final show = itemCount > 0 && remaining > 0;
-
-                      return IgnorePointer(
-                        ignoring: !show,
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: SafeArea(
-                            top: false,
-                            minimum: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                            child: AnimatedSlide(
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeOut,
-                              offset: show
-                                  ? Offset.zero
-                                  : const Offset(0, 0.25),
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 160),
-                                curve: Curves.easeOut,
-                                opacity: show ? 1 : 0,
-                                child: _FreeDeliveryCueBar(
-                                  subtotal: subtotal,
-                                  remaining: remaining,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
             ],
           ),
         );
@@ -572,79 +530,6 @@ class _QuickChipsRow extends StatelessWidget {
                   for (final f in ProductQuickFilter.values) chip(f),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FreeDeliveryCueBar extends StatelessWidget {
-  final double subtotal;
-  final double remaining;
-
-  const _FreeDeliveryCueBar({required this.subtotal, required this.remaining});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final bg = theme.colorScheme.surface;
-    final border = theme.dividerColor.withValues(alpha: isDark ? 0.32 : 0.40);
-    final accent = theme.primaryColor;
-    final onSurface = theme.colorScheme.onSurface;
-    final info = isDark ? AppColors.darkInfo : AppColors.lightInfo;
-
-    final progress = (subtotal / CartPricing.freeDeliveryThreshold)
-        .clamp(0.0, 1.0)
-        .toDouble();
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border, width: 0.7),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withValues(alpha: isDark ? 0.22 : 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.local_shipping_outlined, size: 16, color: info),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Add ${AppCurrency.format(remaining, decimals: 0, freeForZero: false)} more for free delivery',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: onSurface,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 4,
-                    backgroundColor: accent.withValues(alpha: 0.12),
-                    valueColor: AlwaysStoppedAnimation<Color>(accent),
-                  ),
-                ),
-              ],
             ),
           ),
         ],

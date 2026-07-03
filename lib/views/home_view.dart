@@ -45,6 +45,16 @@ class _HomeViewState extends State<HomeView> {
 
     final productItems = products.data ?? <Data>[];
 
+    for (final product in productItems) {
+      if ((product.categoryName == null || product.categoryName!.trim().isEmpty) &&
+          product.categoryId != null) {
+        final match = categoryItems.where((c) => c.id == product.categoryId);
+        if (match.isNotEmpty) {
+          product.categoryName = match.first.name;
+        }
+      }
+    }
+
     return _HomePayload(categories: categoryItems, products: productItems);
   }
 

@@ -1025,20 +1025,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                           total: total,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _CheckoutSectionCard(
-                        title: 'Coupon',
-                        child: _CouponSection(
-                          controller: _couponCtrl,
-                          appliedCoupon: _appliedCoupon,
-                          message: _couponMessage,
-                          onApply: _applyCoupon,
-                          onRemove: _removeCoupon,
-                          onViewAvailable: _openCouponsListSheet,
-                          isLoading: _applyingCoupon || _couponsLoading,
-                          availableCount: _availableCoupons.length,
-                        ),
-                      ),
+
                       const SizedBox(height: 12),
                       _CheckoutSectionCard(
                         title: 'Payment Method',
@@ -1447,13 +1434,6 @@ class _PaymentMethodCard extends StatelessWidget {
           subtitle: 'Pay in cash when your order arrives.',
           icon: Icons.payments_outlined,
           value: 'Cash on Delivery',
-        ),
-        const SizedBox(height: 10),
-        buildOption(
-          title: 'Online Payment',
-          subtitle: 'Pay securely using Card, UPI, or NetBanking.',
-          icon: Icons.credit_card_outlined,
-          value: 'Online Payment',
         ),
       ],
     );

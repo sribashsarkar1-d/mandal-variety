@@ -75,6 +75,8 @@ class ProductModel {
   final bool? isFastDelivery;
   final bool? freeDelivery;
   final bool? isBestSeller;
+  final String? categoryName;
+  final int? categoryId;
 
   const ProductModel({
     required this.id,
@@ -93,6 +95,8 @@ class ProductModel {
     this.isFastDelivery,
     this.freeDelivery,
     this.isBestSeller,
+    this.categoryName,
+    this.categoryId,
   });
 
   bool get hasDiscount =>
@@ -115,6 +119,8 @@ class ProductModel {
     bool? isFastDelivery,
     bool? freeDelivery,
     bool? isBestSeller,
+    String? categoryName,
+    int? categoryId,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -133,6 +139,8 @@ class ProductModel {
       isFastDelivery: isFastDelivery ?? this.isFastDelivery,
       freeDelivery: freeDelivery ?? this.freeDelivery,
       isBestSeller: isBestSeller ?? this.isBestSeller,
+      categoryName: categoryName ?? this.categoryName,
+      categoryId: categoryId ?? this.categoryId,
     );
   }
 }

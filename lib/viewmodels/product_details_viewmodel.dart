@@ -309,12 +309,17 @@ class ProductDetailsViewModel extends BaseViewModel {
           .toList(growable: false)
           .asMap()
           .entries
-          .map((entry) => _mapApiProduct(entry.value, entry.key))
+          .map((entry) {
+            final item = entry.value;
+            // Note: In details view we might not have all categories loaded,
+            // but we can at least pass through the item's existing categoryName
+            return _mapApiProduct(item, entry.key);
+          })
           .toList(growable: false);
 
       final sameCategory = apiAll
           .where((p) {
-            final cat = p.category.displayName.toLowerCase();
+            final cat = (p.categoryName ?? p.category.displayName).toLowerCase();
             final current = displayCategoryLabel.toLowerCase();
             return cat == current && p.id != product.id;
           })
@@ -369,6 +374,8 @@ class ProductDetailsViewModel extends BaseViewModel {
       stockLeft: null,
       isFastDelivery: null,
       isBestSeller: null,
+      categoryName: item.categoryName,
+      categoryId: item.categoryId,
     );
   }
 

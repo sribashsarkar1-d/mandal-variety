@@ -23,17 +23,21 @@ import '../dialogs/app_dialog.dart';
 
 const String _fallbackImageAsset = 'assets/logo/mandal_logo.png';
 
-bool _isUnsplashDemoUrl(String value) => value.contains('images.unsplash.com');
-
 bool _isHttpUrl(String value) =>
     value.startsWith('http://') || value.startsWith('https://');
 
 ImageProvider _resolveImageProvider(String source) {
   final value = source.trim();
-  if (value.isEmpty || _isUnsplashDemoUrl(value) || !_isHttpUrl(value)) {
+  if (value.isEmpty) {
     return const AssetImage(_fallbackImageAsset);
   }
-  return NetworkImage(value);
+  if (value.startsWith('assets/')) {
+    return AssetImage(value);
+  }
+  if (_isHttpUrl(value)) {
+    return NetworkImage(value);
+  }
+  return const AssetImage(_fallbackImageAsset);
 }
 
 class AppDrawer extends StatefulWidget {

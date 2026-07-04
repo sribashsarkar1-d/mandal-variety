@@ -30,11 +30,19 @@ class Data {
 
   Data({this.cartId, this.cartItemId, this.productId, this.quantity});
 
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    if (value is double) return value.toInt();
+    return null;
+  }
+
   Data.fromJson(Map<String, dynamic> json) {
-    cartId = json['cart_id'];
-    cartItemId = json['cart_item_id'];
-    productId = json['product_id'];
-    quantity = json['quantity'];
+    cartId = _parseInt(json['cart_id']);
+    cartItemId = _parseInt(json['cart_item_id']);
+    productId = _parseInt(json['product_id']);
+    quantity = _parseInt(json['quantity']);
   }
 
   Map<String, dynamic> toJson() {

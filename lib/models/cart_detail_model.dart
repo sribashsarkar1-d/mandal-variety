@@ -152,10 +152,22 @@ class CartDetailItem {
       ''
     ).toString();
     
-    final imgVal = json['images'] ??
-        json['image'] ??
-        json['product_image'] ??
-        (json['product'] is Map ? (json['product'] as Map)['images'] ?? (json['product'] as Map)['image'] : null);
+    dynamic extractImg(Map<String, dynamic> j) {
+      for (final k in ['images', 'image', 'imageUrl', 'product_image']) {
+        final v = j[k];
+        if (v != null && v.toString().trim().isNotEmpty) return v;
+      }
+      if (j['product'] is Map) {
+        final p = j['product'] as Map;
+        for (final k in ['images', 'image', 'imageUrl', 'product_image']) {
+          final v = p[k];
+          if (v != null && v.toString().trim().isNotEmpty) return v;
+        }
+      }
+      return null;
+    }
+    
+    final imgVal = extractImg(json);
     if (imgVal is List && imgVal.isNotEmpty) {
       images = imgVal.first.toString();
     } else {

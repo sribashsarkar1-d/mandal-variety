@@ -16,17 +16,21 @@ import '../../data/models/wishlist_item_model.dart';
 
 const String _fallbackImageAsset = 'assets/logo/mandal_logo.png';
 
-bool _isUnsplashDemoUrl(String value) => value.contains('images.unsplash.com');
-
 bool _isHttpUrl(String value) =>
     value.startsWith('http://') || value.startsWith('https://');
 
 ImageProvider _resolveImageProvider(String source) {
   final value = source.trim();
-  if (value.isEmpty || _isUnsplashDemoUrl(value) || !_isHttpUrl(value)) {
+  if (value.isEmpty) {
     return const AssetImage(_fallbackImageAsset);
   }
-  return NetworkImage(value);
+  if (value.startsWith('assets/')) {
+    return AssetImage(value);
+  }
+  if (_isHttpUrl(value)) {
+    return NetworkImage(value);
+  }
+  return const AssetImage(_fallbackImageAsset);
 }
 
 class ProductGridSliver extends StatelessWidget {
@@ -467,18 +471,7 @@ class _ProductGridCardState extends State<ProductGridCard> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if (shortDescription.isNotEmpty) ...[
-                        Text(
-                          shortDescription,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption.copyWith(
-                            color: onSurface.withValues(alpha: 0.72),
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                      ],
+
                       if (rating != null)
                         Row(
                           children: [

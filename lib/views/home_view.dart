@@ -212,6 +212,32 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Promotional Banner Slider
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                height: 160,
+                width: double.infinity,
+                child: PageView(
+                  children: [
+                    Image.asset(
+                      'assets/images/onboarding/delivery_splash_1.PNG',
+                      fit: BoxFit.cover,
+                    ),
+                    Image.asset(
+                      'assets/images/onboarding/delivery_splash_2.PNG',
+                      fit: BoxFit.cover,
+                    ),
+                    Image.asset(
+                      'assets/images/onboarding/delivery_splash_3.PNG',
+                      fit: BoxFit.cover,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             Text(
               'Categories',
               style: Theme.of(

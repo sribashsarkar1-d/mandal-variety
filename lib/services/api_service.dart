@@ -306,7 +306,7 @@ class ApiService {
       productId,
       productName: productName,
     );
-    final safeQuantity = quantity.clamp(1, 999);
+    final safeQuantity = quantity; // Allow negative values for delta decrement
     final resolvedUserId = _resolveUserId(userId);
     _debugLogAddToCart(
       stage: 'request.init',
@@ -629,13 +629,11 @@ class ApiService {
       if (resolvedUserId != null) {
         queryParams['user_id'] = resolvedUserId.toString();
       }
-      final itemOrProdId = (cartItemId != null && cartItemId.isNotEmpty)
-          ? cartItemId
-          : productId?.toString();
-
-      if (itemOrProdId != null) {
-        queryParams['cart_item_id'] = itemOrProdId;
-        queryParams['product_id'] = itemOrProdId;
+      if (cartItemId != null && cartItemId.isNotEmpty) {
+        queryParams['cart_item_id'] = cartItemId;
+      }
+      if (productId != null) {
+        queryParams['product_id'] = productId.toString();
       }
 
       final jsonMap = await _delete(

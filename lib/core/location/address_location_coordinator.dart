@@ -86,22 +86,21 @@ class AddressLocationCoordinator {
     );
   }
 
-  /// User-initiated re-detection from UI.
   Future<void> locateMeAgain(BuildContext context) async {
     await init();
-    await _detectAndCache(
+    final success = await _detectAndCache(
       context: context,
       requestPermissionIfNeeded: true,
       showBlockingPrompts: true,
       replaceOnlyIfMoved: false,
     );
 
-    if (context.mounted) {
+    if (success && context.mounted) {
       AppSnackbar.success(context, 'Location updated');
     }
   }
 
-  Future<void> _detectAndCache({
+  Future<bool> _detectAndCache({
     required BuildContext? context,
     required bool requestPermissionIfNeeded,
     required bool showBlockingPrompts,
@@ -124,7 +123,7 @@ class AddressLocationCoordinator {
           );
 
           // Avoid noise — only replace if user has actually moved.
-          if (meters < 80) return;
+          if (meters < 80) return true;
         }
       }
 
@@ -134,16 +133,17 @@ class AddressLocationCoordinator {
       if (selected.isEmpty || selected == AddressRepositoryKeys.autoId) {
         await _repo.setSelectedAddressId(AddressRepositoryKeys.autoId);
       }
+      return true;
     } on LocationException catch (e) {
-      if (!showBlockingPrompts || context == null) return;
+      if (!showBlockingPrompts || context == null) return false;
 
       switch (e.code) {
         case LocationException.serviceDisabled:
           await _promptEnableLocationServices(context);
-          return;
+          return false;
         case LocationException.permissionDeniedForever:
           await _promptOpenAppSettings(context);
-          return;
+          return false;
         case LocationException.permissionDenied:
           if (requestPermissionIfNeeded && context.mounted) {
             AppSnackbar.warning(
@@ -151,15 +151,15 @@ class AddressLocationCoordinator {
               'Location permission denied. You can add an address manually.',
             );
           }
-          return;
+          return false;
         default:
           if (context.mounted) {
             AppSnackbar.error(context, 'Could not detect location');
           }
-          return;
+          return false;
       }
     } catch (_) {
-      // ignore
+      return false;
     }
   }
 

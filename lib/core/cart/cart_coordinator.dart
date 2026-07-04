@@ -135,9 +135,12 @@ class CartCoordinator {
           productId: productId,
           name: 'Product $productId',
           unitPrice: 0.0,
-          quantity: safeQuantity,
+          quantity: 0,
         ),
       );
+
+      final delta = safeQuantity - (existing.quantity == 0 ? 0 : existing.quantity);
+      if (delta == 0 && existing.quantity != 0) return;
 
       // Optimistic update
       await _repository.setQuantity(productId, safeQuantity);
@@ -154,7 +157,7 @@ class CartCoordinator {
           try {
             await _apiService.addToCart(
               productId: numericProductId,
-              quantity: safeQuantity,
+              quantity: delta,
             );
             remoteSuccess = true;
           } catch (_) {}
@@ -171,6 +174,9 @@ class CartCoordinator {
     await init();
     final numericProductId = int.tryParse(productId.trim());
     if (_hasSession) {
+      // Optimistic update
+      await _repository.removeItem(productId);
+
       if (numericProductId != null) {
         bool remoteSuccess = false;
         try {
@@ -179,12 +185,8 @@ class CartCoordinator {
         } catch (_) {}
 
         if (remoteSuccess) {
-          await _repository.removeItem(productId);
           await _attemptSyncFromServer();
         }
-      } else {
-        // Mock item remove
-        await _repository.removeItem(productId);
       }
     }
   }

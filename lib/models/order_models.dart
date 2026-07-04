@@ -261,7 +261,27 @@ class Items {
     quantity = _toInt(json['quantity']);
     _priceRaw = json['price']?.toString();
     name = json['name']?.toString();
-    images = json['images']?.toString();
+    dynamic extractImg(Map<String, dynamic> j) {
+      for (final k in ['images', 'image', 'imageUrl', 'product_image']) {
+        final v = j[k];
+        if (v != null && v.toString().trim().isNotEmpty) return v;
+      }
+      if (j['product'] is Map) {
+        final p = j['product'] as Map;
+        for (final k in ['images', 'image', 'imageUrl', 'product_image']) {
+          final v = p[k];
+          if (v != null && v.toString().trim().isNotEmpty) return v;
+        }
+      }
+      return null;
+    }
+    
+    final imgVal = extractImg(json);
+    if (imgVal is List && imgVal.isNotEmpty) {
+      images = imgVal.first.toString();
+    } else {
+      images = imgVal?.toString();
+    }
   }
 
   Map<String, dynamic> toJson() {

@@ -9,9 +9,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/app_currency.dart';
 import '../../models/order_models.dart';
+import '../../core/auth/auth_coordinator.dart';
 import '../../services/api_service.dart';
 import '../../viewmodels/orders_viewmodel.dart';
 import '../main/main_view.dart';
+import '../product_details/reviews_view.dart';
 
 const String _fallbackImageAsset = 'assets/logo/mandal_logo.png';
 
@@ -604,54 +606,65 @@ class _AnimatedOrderCardState extends State<_AnimatedOrderCard>
                     for (final item in (currentOrder.items ?? <OrderDetailItem>[])) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image(
-                                image: _resolveImageProvider(item.images ?? ''),
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (ctx, err, stack) => Container(
-                                  width: 50,
-                                  height: 50,
-                                  color: theme.colorScheme.surfaceContainerHighest,
-                                  child: const Icon(Icons.image_outlined, size: 20),
+                            Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image(
+                                    image: _resolveImageProvider(item.images ?? ''),
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (ctx, err, stack) => Container(
+                                      width: 50,
+                                      height: 50,
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                      child: const Icon(Icons.image_outlined, size: 20),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.productName ?? 'Product',
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.productName ?? 'Product',
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: onSurface,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '${AppCurrency.symbol}${item.price?.toStringAsFixed(2)} × ${item.quantity}',
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: onSurface.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    '${AppCurrency.symbol}${item.price?.toStringAsFixed(2)} × ${item.quantity}',
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: onSurface.withValues(alpha: 0.6),
-                                    ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${AppCurrency.symbol}${((item.price ?? 0.0) * (item.quantity ?? 1)).toStringAsFixed(2)}',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${AppCurrency.symbol}${((item.price ?? 0.0) * (item.quantity ?? 1)).toStringAsFixed(2)}',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight: FontWeight.bold,
+                            if ((currentOrder.status?.toLowerCase() == 'delivered' || 
+                                 currentOrder.status?.toLowerCase() == 'completed' || 
+                                 currentOrder.status?.toLowerCase() == 'success') && item.productId != null)
+                              _ReviewButtonWidget(
+                                productId: item.productId!, 
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -1663,6 +1676,136 @@ class _TrackingTimeline extends StatelessWidget {
           showLine: false,
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  REVIEW BUTTON WIDGET
+// ─────────────────────────────────────────────
+
+class _ReviewButtonWidget extends StatefulWidget {
+  final int productId;
+
+  const _ReviewButtonWidget({
+    required this.productId,
+  });
+
+  @override
+  State<_ReviewButtonWidget> createState() => _ReviewButtonWidgetState();
+}
+
+class _ReviewButtonWidgetState extends State<_ReviewButtonWidget> {
+  bool _isLoading = true;
+  bool _isReviewed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkReviewStatus();
+  }
+
+  Future<void> _checkReviewStatus() async {
+    final userId = AuthCoordinator.instance.currentUserId;
+    if (userId == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final res = await ApiService().getReviewsList(
+        productId: widget.productId,
+        userId: userId,
+      );
+      if (mounted) {
+        setState(() {
+          _isReviewed = (res.reviewCount ?? 0) > 0;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleWriteReview() async {
+    final submittedMessage = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => AddReviewSheet(
+        onSubmit: (rating, title, comment) {
+          return ApiService().addReview(
+            productId: widget.productId,
+            rating: rating,
+            title: title,
+            comment: comment,
+          );
+        },
+      ),
+    );
+
+    if (!mounted) return;
+    if (submittedMessage != null) {
+      final msgLower = submittedMessage.toLowerCase();
+      // If the API returns success, or tells us it's already reviewed
+      if (msgLower.contains('successfully') || msgLower.contains('already reviewed')) {
+        setState(() => _isReviewed = true);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(submittedMessage)),
+      );
+      _checkReviewStatus();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 8.0),
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (_isReviewed) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_outline, size: 16, color: Colors.green[600]),
+            const SizedBox(width: 6),
+            Text(
+              'Review Submitted',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.green[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: TextButton.icon(
+        onPressed: _handleWriteReview,
+        icon: const Icon(Icons.rate_review_outlined, size: 18),
+        label: const Text('Write Review'),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
     );
   }
 }

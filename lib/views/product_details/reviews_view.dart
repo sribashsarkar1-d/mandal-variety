@@ -92,7 +92,9 @@ class _AllReviewsViewState extends State<AllReviewsView> {
     return status == 'approved' ||
         status == 'active' ||
         status == 'published' ||
-        status == '1';
+        status == '1' ||
+        status == 'pending' ||
+        status == '0';
   }
 
   ReviewDisplayEntry _mapApiReview(Data review) {
@@ -191,45 +193,7 @@ class _AllReviewsViewState extends State<AllReviewsView> {
 
   int get _totalRatings => _apiReviewCount ?? _reviews.length;
 
-  Future<void> _openAddReviewSheet() async {
-    final productId = _productId;
-    if (productId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid product id for review submission.'),
-        ),
-      );
-      return;
-    }
 
-    final allowed = await handleProtectedAction(context);
-    if (!allowed || !mounted) return;
-
-    final submittedMessage = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => _AddReviewSheet(
-        onSubmit: (rating, title, comment) {
-          return _apiService.addReview(
-            productId: productId,
-            rating: rating,
-            title: title,
-            comment: comment,
-          );
-        },
-      ),
-    );
-
-    if (!mounted) return;
-    if (submittedMessage != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(submittedMessage)));
-      await _loadReviews();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -241,11 +205,6 @@ class _AllReviewsViewState extends State<AllReviewsView> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: CommonAppBar(title: 'All Reviews'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddReviewSheet,
-        icon: const Icon(Icons.rate_review_outlined),
-        label: const Text('Add Review'),
-      ),
       body: _isLoading
           ? const Center(
               child: SizedBox(
@@ -369,17 +328,17 @@ class _AllReviewsViewState extends State<AllReviewsView> {
   }
 }
 
-class _AddReviewSheet extends StatefulWidget {
-  const _AddReviewSheet({required this.onSubmit});
+class AddReviewSheet extends StatefulWidget {
+  const AddReviewSheet({super.key, required this.onSubmit});
 
   final Future<dynamic> Function(int rating, String title, String comment)
   onSubmit;
 
   @override
-  State<_AddReviewSheet> createState() => _AddReviewSheetState();
+  State<AddReviewSheet> createState() => _AddReviewSheetState();
 }
 
-class _AddReviewSheetState extends State<_AddReviewSheet> {
+class _AddReviewSheetState extends State<AddReviewSheet> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
 

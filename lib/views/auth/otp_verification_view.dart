@@ -50,11 +50,17 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     super.initState();
     _startResendCooldown();
     _otpController.addListener(_onOtpChanged);
+    _otpFocusNode.addListener(_onFocusChanged);
+  }
+
+  void _onFocusChanged() {
+    setState(() {});
   }
 
   @override
   void dispose() {
     _otpController.removeListener(_onOtpChanged);
+    _otpFocusNode.removeListener(_onFocusChanged);
     _otpController.dispose();
     _otpFocusNode.dispose();
     _resendTimer?.cancel();
@@ -62,7 +68,9 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   }
 
   void _onOtpChanged() {
-    if (_errorMessage != null) setState(() => _errorMessage = null);
+    setState(() {
+      if (_errorMessage != null) _errorMessage = null;
+    });
     if (_otpController.text.length == 6) _verify();
   }
 
@@ -281,36 +289,37 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Hidden real input — zero-size but accepts keyboard events
-        SizedBox(
-          width: 1,
-          height: 1,
-          child: Opacity(
-            opacity: 0,
-            child: TextField(
-              controller: _otpController,
-              focusNode: _otpFocusNode,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
-              decoration: const InputDecoration(
-                counterText: '',
-                border: InputBorder.none,
-              ),
-            ),
-          ),
+        // Visual boxes (bottom of stack)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(6, _buildOtpBox),
         ),
 
-        // Visual boxes
-        GestureDetector(
-          onTap: () => _otpFocusNode.requestFocus(),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(6, _buildOtpBox),
+        // Hidden real input — covers the entire row to reliably catch taps
+        Positioned.fill(
+          child: TextField(
+            controller: _otpController,
+            focusNode: _otpFocusNode,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            showCursor: false,
+            enableInteractiveSelection: false,
+            style: const TextStyle(color: Colors.transparent, fontSize: 1), // Invisible text
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: const InputDecoration(
+              counterText: '',
+              border: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              fillColor: Colors.transparent,
+              filled: true,
+            ),
           ),
         ),
       ],

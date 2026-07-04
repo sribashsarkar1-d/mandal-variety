@@ -75,10 +75,14 @@ class ApiService {
     return Productdetails.fromJson(jsonMap);
   }
 
-  Future<ListReview> getReviewsList({required int productId}) async {
+  Future<ListReview> getReviewsList({required int productId, int? userId}) async {
+    final queryParameters = <String, String>{'product_id': productId.toString()};
+    if (userId != null) {
+      queryParameters['user_id'] = userId.toString();
+    }
     final jsonMap = await _get(
       'reviews/list.php',
-      queryParameters: <String, String>{'product_id': productId.toString()},
+      queryParameters: queryParameters,
     );
     return ListReview.fromJson(jsonMap);
   }
@@ -102,39 +106,13 @@ class ApiService {
       'comment': cleanedComment,
       if (resolvedUserId != null) 'user_id': resolvedUserId,
     };
-    final formBody = <String, String>{
-      'product_id': productId.toString(),
-      'rating': safeRating.toString(),
-      'title': cleanedTitle,
-      'comment': cleanedComment,
-      if (resolvedUserId != null) 'user_id': resolvedUserId.toString(),
-    };
 
-    try {
-      final jsonMap = await _post(
-        'reviews/add.php',
-        body: jsonBody,
-        withAuth: true,
-      );
-      return AddReview.fromJson(jsonMap);
-    } catch (_) {}
-
-    try {
-      final formMap = await _postForm(
-        'reviews/add.php',
-        body: formBody,
-        withAuth: true,
-      );
-      return AddReview.fromJson(formMap);
-    } catch (_) {}
-
-    final queryMap = await _post(
+    final jsonMap = await _post(
       'reviews/add.php',
-      queryParameters: formBody,
-      body: const <String, dynamic>{},
+      body: jsonBody,
       withAuth: true,
     );
-    return AddReview.fromJson(queryMap);
+    return AddReview.fromJson(jsonMap);
   }
 
   Future<GlobalSearch> getGlobalSearch({required String query}) async {

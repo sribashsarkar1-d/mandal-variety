@@ -15,10 +15,8 @@ enum ProductSort {
 
 enum ProductQuickFilter {
   all,
-  bestSellers,
   under99,
   topRated,
-  fastDelivery,
   discounted,
 }
 
@@ -26,15 +24,11 @@ extension ProductQuickFilterX on ProductQuickFilter {
   String get label {
     switch (this) {
       case ProductQuickFilter.all:
-        return 'All';
-      case ProductQuickFilter.bestSellers:
-        return 'Best Sellers';
+        return 'All'; 
       case ProductQuickFilter.under99:
         return 'Under ₹99';
       case ProductQuickFilter.topRated:
-        return 'Top Rated';
-      case ProductQuickFilter.fastDelivery:
-        return 'Fast Delivery';
+        return 'Top Rated'; 
       case ProductQuickFilter.discounted:
         return 'Discounted';
     }
@@ -97,13 +91,9 @@ class ProductListingViewModel extends BaseViewModel {
 
     final List<ProductModel> filtered = switch (_quickFilter) {
       ProductQuickFilter.all => base,
-      ProductQuickFilter.bestSellers =>
-        base.where((p) => p.isBestSeller == true).toList(),
       ProductQuickFilter.under99 => base.where((p) => p.price < 99).toList(),
       ProductQuickFilter.topRated =>
         base.where((p) => (p.rating ?? 0.0) >= 4.5).toList(),
-      ProductQuickFilter.fastDelivery =>
-        base.where((p) => p.isFastDelivery == true).toList(),
       ProductQuickFilter.discounted =>
         base.where((p) => p.hasDiscount).toList(),
     };

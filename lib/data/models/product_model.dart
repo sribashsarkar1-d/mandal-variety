@@ -11,6 +11,7 @@ enum ProductCategory {
   drinks,
   dairy,
   tobacco,
+  other,
 }
 
 extension ProductCategoryX on ProductCategory {
@@ -32,6 +33,8 @@ extension ProductCategoryX on ProductCategory {
         return 'Dairy';
       case ProductCategory.tobacco:
         return 'Paan Corner';
+      case ProductCategory.other:
+        return 'Products';
     }
   }
 
@@ -53,6 +56,8 @@ extension ProductCategoryX on ProductCategory {
         return 'dairy';
       case ProductCategory.tobacco:
         return 'tobacco products';
+      case ProductCategory.other:
+        return 'products';
     }
   }
 }

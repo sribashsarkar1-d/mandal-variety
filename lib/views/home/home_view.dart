@@ -38,35 +38,6 @@ class _HomeViewState extends State<HomeView> {
     'assets/images/onboarding/delivery_splash_3.PNG',
   ];
 
-  final List<String> _bannerTitles = [
-    'Summer Collection',
-    'Winter Clearance',
-    'Weekend Flash Sale',
-    'New Arrivals',
-  ];
-  final List<String> _bannerSubtitles = [
-    'Up to 50% Off on select items',
-    'Save big on cold weather gear',
-    'Discounts ending Sunday',
-    'Latest trends and gears',
-  ];
-  final List<String> _bannerImages = [
-    'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=800',
-    'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=800',
-  ];
-
-  final List<String> _sectionTitles = [
-    'Groceries You Need',
-    'Fresh & Daily Picks',
-    'Snack Time Favourites',
-    'Beauty Must-Haves',
-    'Drinks for Every Mood',
-    'Dairy Essentials',
-    'Everyday Essentials',
-  ];
-
   bool _isLoadingDynamic = false;
   String? _dynamicError;
   int _retryCount = 0;
@@ -124,14 +95,16 @@ class _HomeViewState extends State<HomeView> {
           .asMap()
           .entries
           .map((entry) {
-             final item = entry.value;
-             if ((item.categoryName == null || item.categoryName!.trim().isEmpty) && item.categoryId != null) {
-                final match = apiCategories.where((c) => c.id == item.categoryId);
-                if (match.isNotEmpty) {
-                   item.categoryName = match.first.name;
-                }
-             }
-             return _mapApiProduct(item, entry.key);
+            final item = entry.value;
+            if ((item.categoryName == null ||
+                    item.categoryName!.trim().isEmpty) &&
+                item.categoryId != null) {
+              final match = apiCategories.where((c) => c.id == item.categoryId);
+              if (match.isNotEmpty) {
+                item.categoryName = match.first.name;
+              }
+            }
+            return _mapApiProduct(item, entry.key);
           })
           .toList(growable: false);
 
@@ -238,16 +211,16 @@ class _HomeViewState extends State<HomeView> {
     }
 
     final discountTag = discountPercent != null && discountPercent > 0
-      ? '$discountPercent% OFF'
-      : null;
+        ? '$discountPercent% OFF'
+        : null;
 
     final shortDescription = (item.shortDescription ?? '').trim().isNotEmpty
-      ? item.shortDescription!.trim()
-      : (item.description ?? '').trim();
+        ? item.shortDescription!.trim()
+        : (item.description ?? '').trim();
 
     final deliveryType = (item.deliveryType ?? '').toLowerCase();
     final isFastDelivery =
-      deliveryType.contains('fast') || deliveryType.contains('same');
+        deliveryType.contains('fast') || deliveryType.contains('same');
 
     final rawImage = (item.images ?? '').trim();
     final imageUrl = rawImage.isEmpty
@@ -284,7 +257,9 @@ class _HomeViewState extends State<HomeView> {
 
     double finalPrice = basePrice;
     double? originalPrice;
-    if (discountPrice != null && discountPrice > 0 && discountPrice < basePrice) {
+    if (discountPrice != null &&
+        discountPrice > 0 &&
+        discountPrice < basePrice) {
       finalPrice = discountPrice;
       originalPrice = basePrice;
     }
@@ -309,7 +284,11 @@ class _HomeViewState extends State<HomeView> {
           ? 'Unnamed Product'
           : item.name!.trim(),
       shortDescription: shortDescription.isEmpty ? null : shortDescription,
-      imageUrl: _apiService.resolveImageUrl((item.images != null && item.images!.isNotEmpty) ? item.images!.first : null),
+      imageUrl: _apiService.resolveImageUrl(
+        (item.images != null && item.images!.isNotEmpty)
+            ? item.images!.first
+            : null,
+      ),
       price: finalPrice,
       originalPrice: originalPrice,
       discountTag: discountTag,
@@ -342,7 +321,7 @@ class _HomeViewState extends State<HomeView> {
     if (value.contains('paan') || value.contains('tobacco')) {
       return ProductCategory.tobacco;
     }
-    return ProductCategory.grocery;
+    return ProductCategory.other;
   }
 
   IconData _iconFromCategoryName(String? categoryName) {
@@ -370,27 +349,6 @@ class _HomeViewState extends State<HomeView> {
     return Icons.category;
   }
 
-  ProductCategory? _knownCategoryFromName(String? categoryName) {
-    final value = (categoryName ?? '').toLowerCase();
-    if (value.contains('grocery')) return ProductCategory.grocery;
-    if (value.contains('beauty')) return ProductCategory.beauty;
-    if (value.contains('shoe') || value.contains('footwear')) {
-      return ProductCategory.shoes;
-    }
-    if (value.contains('fresh') || value.contains('vegetable')) {
-      return ProductCategory.fresh;
-    }
-    if (value.contains('snack')) return ProductCategory.snacks;
-    if (value.contains('drink') || value.contains('beverage')) {
-      return ProductCategory.drinks;
-    }
-    if (value.contains('dairy')) return ProductCategory.dairy;
-    if (value.contains('paan') || value.contains('tobacco')) {
-      return ProductCategory.tobacco;
-    }
-    return null;
-  }
-
   List<ProductModel> get _effectiveProducts {
     final source = _apiProducts;
     final Map<String, ProductModel> uniqueMap = {};
@@ -408,42 +366,31 @@ class _HomeViewState extends State<HomeView> {
     final selected = _selectedCategoryName!.toLowerCase();
     return deduplicated
         .where((product) {
-          final catName = (product.categoryName ?? product.category.displayName).toLowerCase();
+          final catName = (product.categoryName ?? product.category.displayName)
+              .toLowerCase();
           return catName == selected;
         })
         .toList(growable: false);
   }
 
-  int get _totalSections {
-    final total = _effectiveProducts.length;
-    if (total == 0) return 0;
-    return (total / 4).ceil();
-  }
+  List<CategoryItemModel> get _activeSections {
+    final sections = <CategoryItemModel>[];
+    for (final cat in _apiCategories) {
+      if ((cat.name ?? '').trim().isEmpty) continue;
 
-  List<ProductModel> _generateProducts(int sectionIndex) {
-    final source = _effectiveProducts;
-    if (source.isEmpty) return const <ProductModel>[];
+      final products = _effectiveProducts
+          .where(
+            (p) =>
+                p.categoryId == cat.id ||
+                (p.categoryName ?? '').toLowerCase() == cat.name!.toLowerCase(),
+          )
+          .toList();
 
-    final start = sectionIndex * 4;
-    if (start >= source.length) return const <ProductModel>[];
-
-    final end = start + 4;
-    return source.sublist(start, end > source.length ? source.length : end);
-  }
-
-  ProductCategory _categoryForSectionTitle(String title) {
-    final t = title.toLowerCase();
-    if (t.contains('groc')) return ProductCategory.grocery;
-    if (t.contains('fresh')) return ProductCategory.fresh;
-    if (t.contains('snack')) return ProductCategory.snacks;
-    if (t.contains('beauty')) return ProductCategory.beauty;
-    if (t.contains('drink')) return ProductCategory.drinks;
-    if (t.contains('dairy')) return ProductCategory.dairy;
-    if (t.contains('shoe')) return ProductCategory.shoes;
-    if (t.contains('paan') || t.contains('tobacco')) {
-      return ProductCategory.tobacco;
+      if (products.isNotEmpty) {
+        sections.add(cat);
+      }
     }
-    return ProductCategory.grocery;
+    return sections;
   }
 
   @override
@@ -483,8 +430,9 @@ class _HomeViewState extends State<HomeView> {
               ],
               onSearchChanged: _onSearchChanged,
               currentBottomBarIndex: 0,
-              showBackButton:
-                  (widget.initialSearchQuery ?? '').trim().isNotEmpty,
+              showBackButton: (widget.initialSearchQuery ?? '')
+                  .trim()
+                  .isNotEmpty,
             ),
             if (_isSearchMode)
               SliverToBoxAdapter(child: _buildSearchResults(theme))
@@ -586,107 +534,87 @@ class _HomeViewState extends State<HomeView> {
               // Finite Section Builder
               if (!hasInitialNetworkFailure)
                 SliverList.builder(
-                  itemCount: _totalSections > 0 ? (_totalSections * 2) - 1 : 0,
+                  itemCount: _activeSections.length,
                   itemBuilder: (context, index) {
-                    if (index % 2 == 0) {
-                      // Return a product list section
-                      final sectionIndex = index ~/ 2;
-                      final title =
-                          _sectionTitles[sectionIndex % _sectionTitles.length];
-                      final products = _generateProducts(sectionIndex);
+                    final sectionCat = _activeSections[index];
+                    final title = sectionCat.name ?? '';
 
-                      return Column(
-                        children: [
-                          EcommerceSectionTitle(
-                            title: title,
-                            onActionTap: () {
-                              ProductListingCoordinator.instance.openListing(
-                                context,
-                                category: _categoryForSectionTitle(title),
-                                currentBottomBarIndex: 0,
-                              );
-                            },
-                          ),
-                          if (products.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                    final allSectionProducts = _effectiveProducts
+                        .where(
+                          (p) =>
+                              p.categoryId == sectionCat.id ||
+                              (p.categoryName ?? '').toLowerCase() ==
+                                  title.toLowerCase(),
+                        )
+                        .toList();
+
+                    final displayProducts = allSectionProducts.take(4).toList();
+
+                    return Column(
+                      children: [
+                        EcommerceSectionTitle(
+                          title: title,
+                          onActionTap: () {
+                            final categoryEnum = _categoryFromApiName(title);
+                            ProductListingCoordinator.instance.openListing(
+                              context,
+                              category: categoryEnum,
+                              categoryId: sectionCat.id,
+                              currentBottomBarIndex: 0,
+                            );
+                          },
+                        ),
+                        if (displayProducts.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(18),
                               ),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 24,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHigh,
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Text(
-                                  'No products found for this category.',
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                              ),
-                            )
-                          else
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: products.length,
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      mainAxisSpacing: 12,
-                                      crossAxisSpacing: 12,
-                                      childAspectRatio: 0.58,
-                                    ),
-                                itemBuilder: (context, i) {
-                                  final product = products[i];
-                                  return ProductGridCard(
-                                    key: ValueKey(product.id),
-                                    product: product,
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        ProductDetailsView.route(
-                                          product: product,
-                                          currentBottomBarIndex: 0,
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
+                              child: Text(
+                                'No products found for this category.',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium,
                               ),
                             ),
-                          const SizedBox(height: 24),
-                        ],
-                      );
-                    } else {
-                      // Return an offer banner
-                      final bannerIndex = index ~/ 2;
-                      final bannerImage =
-                          _bannerImages[bannerIndex % _bannerImages.length];
-                      final bannerTitle =
-                          _bannerTitles[bannerIndex % _bannerTitles.length];
-                      final bannerSubtitle =
-                          _bannerSubtitles[bannerIndex %
-                              _bannerSubtitles.length];
-
-                      return Column(
-                        children: [
-                          EcommerceOfferBanner(
-                            title: bannerTitle,
-                            subtitle: bannerSubtitle,
-                            imageUrl: bannerImage,
-                            onTap: () {},
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: displayProducts.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: 0.58,
+                                  ),
+                              itemBuilder: (context, i) {
+                                final product = displayProducts[i];
+                                return ProductGridCard(
+                                  key: ValueKey(product.id),
+                                  product: product,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      ProductDetailsView.route(
+                                        product: product,
+                                        currentBottomBarIndex: 0,
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                           ),
-                          const SizedBox(height: 24),
-                        ],
-                      );
-                    }
+                        const SizedBox(height: 24),
+                      ],
+                    );
                   },
                 ),
             ],
@@ -752,21 +680,24 @@ class _HomeViewState extends State<HomeView> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: matchingCategories.map((c) {
-                return ActionChip(
-                  label: Text(c.name ?? ''),
-                  backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  onPressed: () {
-                    // Behave as if the user clicked the category from the main home view
-                    setState(() {
-                      _selectedCategoryName = c.name;
-                      _searchQuery = '';
-                    });
-                    // Unfocus search bar
-                    FocusScope.of(context).unfocus();
-                  },
-                );
-              }).toList(growable: false),
+              children: matchingCategories
+                  .map((c) {
+                    return ActionChip(
+                      label: Text(c.name ?? ''),
+                      backgroundColor: theme.colorScheme.primaryContainer
+                          .withValues(alpha: 0.5),
+                      onPressed: () {
+                        // Behave as if the user clicked the category from the main home view
+                        setState(() {
+                          _selectedCategoryName = c.name;
+                          _searchQuery = '';
+                        });
+                        // Unfocus search bar
+                        FocusScope.of(context).unfocus();
+                      },
+                    );
+                  })
+                  .toList(growable: false),
             ),
             const SizedBox(height: 14),
             const Divider(),
@@ -868,16 +799,14 @@ class _HomeViewState extends State<HomeView> {
     for (final cat in _apiCategories) {
       final name = (cat.name ?? '').trim();
       if (name.isEmpty) continue;
-      final knownCategory = _knownCategoryFromName(name);
+      final category = _categoryFromApiName(name);
 
       allItems.add(
         EcommerceCategoryItem(
           label: name,
           icon: _iconFromCategoryName(name),
           onTap: () {
-            setState(() => _selectedCategoryName = name);
-
-            if (knownCategory == ProductCategory.tobacco) {
+            if (category == ProductCategory.tobacco) {
               TobaccoAccessCoordinator.instance.openTobaccoListing(
                 context,
                 currentBottomBarIndex: 0,
@@ -885,15 +814,13 @@ class _HomeViewState extends State<HomeView> {
               return;
             }
 
-            if (knownCategory != null) {
-              Navigator.of(context).push(
-                ProductListingView.route(
-                  category: knownCategory,
-                  categoryId: cat.id,
-                  currentBottomBarIndex: 0,
-                ),
-              );
-            }
+            Navigator.of(context).push(
+              ProductListingView.route(
+                category: category,
+                categoryId: cat.id,
+                currentBottomBarIndex: 0,
+              ),
+            );
           },
           backgroundColor:
               _selectedCategoryName?.toLowerCase() == name.toLowerCase()

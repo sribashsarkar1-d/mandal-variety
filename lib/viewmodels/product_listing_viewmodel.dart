@@ -58,11 +58,11 @@ extension ProductSortX on ProductSort {
 }
 
 class ProductListingViewModel extends BaseViewModel {
-  final ProductCategory category;
+  final ProductCategory? category;
   final int? categoryId;
   final ApiService _apiService = ApiService();
 
-  ProductListingViewModel({required this.category, this.categoryId});
+  ProductListingViewModel({this.category, this.categoryId});
 
   List<ProductModel> _products = const <ProductModel>[];
   List<ProductModel> get products => _products;
@@ -149,7 +149,11 @@ class ProductListingViewModel extends BaseViewModel {
              }
              return _mapApiProduct(item, entry.key);
           })
-          .where((p) => categoryId != null ? p.categoryId == categoryId : p.category == category)
+          .where((p) {
+             if (categoryId != null) return p.categoryId == categoryId;
+             if (category != null) return p.category == category;
+             return true;
+          })
           .toList(growable: false);
 
       _products = mapped;

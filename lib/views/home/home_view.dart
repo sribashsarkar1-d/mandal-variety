@@ -788,7 +788,13 @@ class _HomeViewState extends State<HomeView> {
         label: 'All',
         icon: Icons.apps,
         onTap: () {
-          setState(() => _selectedCategoryName = null);
+          Navigator.of(context).push(
+            ProductListingView.route(
+              category: null,
+              categoryId: null,
+              currentBottomBarIndex: 0,
+            ),
+          );
         },
         backgroundColor: _selectedCategoryName == null
             ? Theme.of(context).primaryColor.withValues(alpha: 0.15)

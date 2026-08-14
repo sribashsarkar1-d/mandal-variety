@@ -13,7 +13,7 @@ class ProductListingCoordinator {
 
   Future<void> openListing(
     BuildContext context, {
-    required ProductCategory category,
+    ProductCategory? category,
     int? categoryId,
     required int currentBottomBarIndex,
     String? initialSearchQuery,

@@ -24,21 +24,21 @@ import '../product_details/product_details_view.dart';
 import 'widgets/product_listing_skeleton.dart';
 
 class ProductListingView extends StatefulWidget {
-  final ProductCategory category;
+  final ProductCategory? category;
   final int? categoryId;
   final int currentBottomBarIndex;
   final String? initialSearchQuery;
 
   const ProductListingView({
     super.key,
-    required this.category,
+    this.category,
     this.categoryId,
     this.currentBottomBarIndex = 0,
     this.initialSearchQuery,
   });
 
   static Route<void> route({
-    required ProductCategory category,
+    ProductCategory? category,
     int? categoryId,
     int currentBottomBarIndex = 0,
     String? initialSearchQuery,
@@ -217,7 +217,7 @@ class _ProductListingViewState extends State<ProductListingView> {
         ],
       ),
       child: AppSearchBar(
-        hintText: 'Search ${widget.category.searchHint}...',
+        hintText: 'Search ${widget.category?.searchHint ?? 'products'}...',
         staticPrefix: 'Search ',
         initialText: widget.initialSearchQuery,
         onChanged: (q) {

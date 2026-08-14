@@ -14,6 +14,7 @@ class ProductListingCoordinator {
   Future<void> openListing(
     BuildContext context, {
     required ProductCategory category,
+    int? categoryId,
     required int currentBottomBarIndex,
     String? initialSearchQuery,
   }) async {
@@ -32,6 +33,7 @@ class ProductListingCoordinator {
     Navigator.of(context).push(
       ProductListingView.route(
         category: category,
+        categoryId: categoryId,
         currentBottomBarIndex: currentBottomBarIndex,
         initialSearchQuery: initialSearchQuery,
       ),

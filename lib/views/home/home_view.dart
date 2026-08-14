@@ -393,12 +393,20 @@ class _HomeViewState extends State<HomeView> {
 
   List<ProductModel> get _effectiveProducts {
     final source = _apiProducts;
+    final Map<String, ProductModel> uniqueMap = {};
+    for (final p in source) {
+      if (!uniqueMap.containsKey(p.id)) {
+        uniqueMap[p.id] = p;
+      }
+    }
+    final deduplicated = uniqueMap.values.toList(growable: false);
+
     if ((_selectedCategoryName ?? '').trim().isEmpty) {
-      return source;
+      return deduplicated;
     }
 
     final selected = _selectedCategoryName!.toLowerCase();
-    return source
+    return deduplicated
         .where((product) {
           final catName = (product.categoryName ?? product.category.displayName).toLowerCase();
           return catName == selected;
@@ -406,18 +414,21 @@ class _HomeViewState extends State<HomeView> {
         .toList(growable: false);
   }
 
+  int get _totalSections {
+    final total = _effectiveProducts.length;
+    if (total == 0) return 0;
+    return (total / 4).ceil();
+  }
+
   List<ProductModel> _generateProducts(int sectionIndex) {
     final source = _effectiveProducts;
     if (source.isEmpty) return const <ProductModel>[];
 
-    final start = (sectionIndex * 3) % source.length;
-    final sectionTitle = _sectionTitles[sectionIndex % _sectionTitles.length];
-    final sectionCategory = _categoryForSectionTitle(sectionTitle);
+    final start = sectionIndex * 4;
+    if (start >= source.length) return const <ProductModel>[];
 
-    return List.generate(4, (i) {
-      final base = source[(start + i) % source.length];
-      return base.copyWith(category: sectionCategory);
-    });
+    final end = start + 4;
+    return source.sublist(start, end > source.length ? source.length : end);
   }
 
   ProductCategory _categoryForSectionTitle(String title) {
@@ -572,9 +583,10 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
 
-              // Infinite Section Builder
+              // Finite Section Builder
               if (!hasInitialNetworkFailure)
                 SliverList.builder(
+                  itemCount: _totalSections > 0 ? (_totalSections * 2) - 1 : 0,
                   itemBuilder: (context, index) {
                     if (index % 2 == 0) {
                       // Return a product list section
@@ -877,6 +889,7 @@ class _HomeViewState extends State<HomeView> {
               Navigator.of(context).push(
                 ProductListingView.route(
                   category: knownCategory,
+                  categoryId: cat.id,
                   currentBottomBarIndex: 0,
                 ),
               );

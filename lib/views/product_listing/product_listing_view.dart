@@ -25,23 +25,27 @@ import 'widgets/product_listing_skeleton.dart';
 
 class ProductListingView extends StatefulWidget {
   final ProductCategory category;
+  final int? categoryId;
   final int currentBottomBarIndex;
   final String? initialSearchQuery;
 
   const ProductListingView({
     super.key,
     required this.category,
+    this.categoryId,
     this.currentBottomBarIndex = 0,
     this.initialSearchQuery,
   });
 
   static Route<void> route({
     required ProductCategory category,
+    int? categoryId,
     int currentBottomBarIndex = 0,
     String? initialSearchQuery,
   }) {
     Widget builder(BuildContext _) => ProductListingView(
       category: category,
+      categoryId: categoryId,
       currentBottomBarIndex: currentBottomBarIndex,
       initialSearchQuery: initialSearchQuery,
     );
@@ -70,7 +74,10 @@ class _ProductListingViewState extends State<ProductListingView> {
   @override
   void initState() {
     super.initState();
-    _vm = ProductListingViewModel(category: widget.category);
+    _vm = ProductListingViewModel(
+      category: widget.category,
+      categoryId: widget.categoryId,
+    );
 
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);

@@ -67,6 +67,12 @@ class Data {
   int? deliveryCharge;
   bool? freeDelivery;
 
+  // New fields
+  int? subcategoryId;
+  int? parentCategoryId;
+  String? parentCategoryName;
+  String? childCategoryName;
+
   Data(
       {this.id,
       this.name,
@@ -99,7 +105,11 @@ class Data {
       this.countryOfOrigin,
       this.deliveryType,
       this.deliveryCharge,
-      this.freeDelivery});
+      this.freeDelivery,
+      this.subcategoryId,
+      this.parentCategoryId,
+      this.parentCategoryName,
+      this.childCategoryName});
 
   Data.fromJson(Map<String, dynamic> json) {
     id = _asInt(json['id']);
@@ -150,6 +160,11 @@ class Data {
     deliveryType = _asString(json['delivery_type'] ?? json['deliveryType']);
     deliveryCharge = _asInt(json['delivery_charge'] ?? json['deliveryCharge']);
     freeDelivery = _asBool(json['free_delivery'] ?? json['freeDelivery']);
+
+    subcategoryId = _asInt(json['subcategory_id'] ?? json['subcategoryId']);
+    parentCategoryId = _asInt(json['parent_category_id'] ?? json['parentCategoryId']);
+    parentCategoryName = _asString(json['parent_category_name'] ?? json['parentCategoryName']);
+    childCategoryName = _asString(json['child_category_name'] ?? json['childCategoryName']);
   }
 
   Map<String, dynamic> toJson() {
@@ -189,6 +204,10 @@ class Data {
     data['delivery_type'] = this.deliveryType;
     data['delivery_charge'] = this.deliveryCharge;
     data['free_delivery'] = this.freeDelivery;
+    data['subcategory_id'] = this.subcategoryId;
+    data['parent_category_id'] = this.parentCategoryId;
+    data['parent_category_name'] = this.parentCategoryName;
+    data['child_category_name'] = this.childCategoryName;
     return data;
   }
 

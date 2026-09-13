@@ -58,6 +58,12 @@ class Data {
   int? deliveryCharge;
   bool? freeDelivery;
 
+  // New fields
+  int? subcategoryId;
+  int? parentCategoryId;
+  String? parentCategoryName;
+  String? childCategoryName;
+
   Data(
       {this.id,
       this.name,
@@ -90,7 +96,11 @@ class Data {
       this.countryOfOrigin,
       this.deliveryType,
       this.deliveryCharge,
-      this.freeDelivery});
+      this.freeDelivery,
+      this.subcategoryId,
+      this.parentCategoryId,
+      this.parentCategoryName,
+      this.childCategoryName});
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -140,6 +150,12 @@ class Data {
     manufacturingDate = json['manufacturingDate'];
     countryOfOrigin = json['countryOfOrigin'];
     deliveryType = json['deliveryType'];
+    
+    // Parse new category fields
+    subcategoryId = _parseInt(json['subcategory_id']);
+    parentCategoryId = _parseInt(json['parent_category_id']);
+    parentCategoryName = json['parent_category_name'];
+    childCategoryName = json['child_category_name'];
   }
   
   static int? _parseInt(dynamic value) {
@@ -200,6 +216,10 @@ class Data {
     data['deliveryType'] = this.deliveryType;
     data['deliveryCharge'] = this.deliveryCharge;
     data['freeDelivery'] = this.freeDelivery;
+    data['subcategory_id'] = this.subcategoryId;
+    data['parent_category_id'] = this.parentCategoryId;
+    data['parent_category_name'] = this.parentCategoryName;
+    data['child_category_name'] = this.childCategoryName;
     return data;
   }
 }

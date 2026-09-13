@@ -5,15 +5,19 @@ class ProductCardWidget extends StatelessWidget {
     super.key,
     required this.name,
     required this.priceText,
+    this.oldPriceText,
     required this.categoryName,
     required this.imageUrl,
+    this.discountBadgeText,
     required this.onTap,
   });
 
   final String name;
   final String priceText;
+  final String? oldPriceText;
   final String categoryName;
   final String imageUrl;
+  final String? discountBadgeText;
   final VoidCallback onTap;
 
   @override
@@ -37,36 +41,61 @@ class ProductCardWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(18),
-                  ),
-                  child: imageUrl.isEmpty
-                      ? _fallbackImage(context)
-                      : Image.network(
-                          imageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _fallbackImage(context),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) {
-                              return child;
-                            }
-                            return Container(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(18),
+                      ),
+                      child: imageUrl.isEmpty
+                          ? _fallbackImage(context)
+                          : Image.network(
+                              imageUrl,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _fallbackImage(context),
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return Container(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  child: const Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            );
-                          },
+                                );
+                              },
+                            ),
+                    ),
+                    if (discountBadgeText != null && discountBadgeText!.isNotEmpty)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            discountBadgeText!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
+                      ),
+                  ],
                 ),
               ),
               Padding(
@@ -82,12 +111,27 @@ class ProductCardWidget extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  priceText,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.primary,
-                  ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      priceText,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    if (oldPriceText != null && oldPriceText!.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        oldPriceText!,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          decoration: TextDecoration.lineThrough,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               Padding(

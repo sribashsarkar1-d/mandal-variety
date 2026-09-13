@@ -13,6 +13,8 @@ import '../models/cart_detail_model.dart';
 import '../models/cart_list_model.dart';
 import '../models/cart_remove_model.dart';
 import '../models/categories_model.dart';
+import '../models/banners_model.dart';
+import '../models/category_hierarchy_model.dart';
 import '../models/global_search_model.dart';
 import '../models/list_coupons_model.dart';
 import '../models/manage_policies_model.dart';
@@ -57,6 +59,32 @@ class ApiService {
   Future<Categories> getCategories() async {
     final jsonMap = await _get('categories/list.php');
     return Categories.fromJson(jsonMap);
+  }
+
+  Future<CategoryHierarchyModel> getCategoryHierarchy() async {
+    final jsonMap = await _get('categories/hierarchy.php');
+    return CategoryHierarchyModel.fromJson(jsonMap);
+  }
+
+  Future<Categories> getChildCategories(int parentId) async {
+    final jsonMap = await _get(
+      'categories/children.php',
+      queryParameters: <String, String>{'parent_id': parentId.toString()},
+    );
+    return Categories.fromJson(jsonMap);
+  }
+
+  Future<dynamic> getCategoryDetails(int id) async {
+    final jsonMap = await _get(
+      'categories/details.php',
+      queryParameters: <String, String>{'id': id.toString()},
+    );
+    return jsonMap;
+  }
+
+  Future<BannersModel> getBanners() async {
+    final jsonMap = await _get('banners/list.php');
+    return BannersModel.fromJson(jsonMap);
   }
 
   Future<pl.ProductList> getProducts() async {

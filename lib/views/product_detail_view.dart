@@ -147,12 +147,27 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                         ),
                       ],
                       const SizedBox(height: 8),
-                      _metaChip(
-                        context,
-                        (details.categoryName ?? '').trim().isEmpty
-                            ? 'Uncategorized'
-                            : details.categoryName!.trim(),
-                      ),
+                      if ((details.parentCategoryName ?? '').trim().isNotEmpty) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _metaChip(context, details.parentCategoryName!.trim()),
+                            if ((details.childCategoryName ?? '').trim().isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_ios, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 8),
+                              _metaChip(context, details.childCategoryName!.trim()),
+                            ],
+                          ],
+                        ),
+                      ] else ...[
+                        _metaChip(
+                          context,
+                          (details.categoryName ?? '').trim().isEmpty
+                              ? 'Uncategorized'
+                              : details.categoryName!.trim(),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,

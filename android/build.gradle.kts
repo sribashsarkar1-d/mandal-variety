@@ -12,12 +12,26 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
+    afterEvaluate {
+        val androidExt = extensions.findByName("android")
+        if (androidExt != null) {
+            val extClass = androidExt.javaClass
+            try {
+                extClass.getMethod("compileSdkVersion", Int::class.java).invoke(androidExt, 36)
+            } catch (e: Exception) {
+                try {
+                    extClass.getMethod("compileSdkVersion", String::class.java).invoke(androidExt, "android-36")
+                } catch (ignored: Exception) {}
+            }
+        }
+    }
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
     project.evaluationDependsOn(":app")
 }
+
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

@@ -61,7 +61,7 @@ class TobaccoAccessCoordinator {
 
     Navigator.of(context).push(
       ProductListingView.route(
-        category: ProductCategory.tobacco,
+        // category: ProductCategory.tobacco,
         currentBottomBarIndex: currentBottomBarIndex,
         initialSearchQuery: initialQuery,
       ),

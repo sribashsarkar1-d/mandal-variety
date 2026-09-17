@@ -32,8 +32,7 @@ class ProductListingCoordinator {
     HapticFeedback.selectionClick();
     Navigator.of(context).push(
       ProductListingView.route(
-        category: category,
-        categoryId: categoryId,
+        parentCategoryId: categoryId,
         currentBottomBarIndex: currentBottomBarIndex,
         initialSearchQuery: initialSearchQuery,
       ),

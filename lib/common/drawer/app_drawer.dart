@@ -339,8 +339,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       Navigator.push(
         context,
         ProductListingView.route(
-          category: knownCategory,
-          categoryId: category.id,
+          parentCategoryId: category.id,
           currentBottomBarIndex: widget.currentBottomBarIndex ?? 0,
         ),
       );

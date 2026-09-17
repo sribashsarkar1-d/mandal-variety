@@ -13,6 +13,7 @@ class AppSearchBar extends StatefulWidget {
   final String? initialText;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onVoiceSubmitted;
   final VoidCallback? onClear;
   final Duration debounceDuration;
   final bool autofocus;
@@ -25,6 +26,7 @@ class AppSearchBar extends StatefulWidget {
     this.initialText,
     this.onChanged,
     this.onSubmitted,
+    this.onVoiceSubmitted,
     this.onClear,
     this.debounceDuration = const Duration(milliseconds: 500),
     this.autofocus = false,
@@ -136,7 +138,11 @@ class _AppSearchBarState extends State<AppSearchBar> {
           _controller.text = result.recognizedWords;
           _hasText = _controller.text.isNotEmpty;
         });
-        _onSearchChanged(result.recognizedWords);
+        if (result.finalResult && widget.onVoiceSubmitted != null) {
+          widget.onVoiceSubmitted!(result.recognizedWords);
+        } else {
+          _onSearchChanged(result.recognizedWords);
+        }
       }
     });
     if (mounted) setState(() => _isListening = true);

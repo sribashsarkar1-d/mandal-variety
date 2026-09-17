@@ -8,9 +8,17 @@ class ProductList {
     success = json['success'];
     if (json['data'] != null) {
       data = <Data>[];
-      json['data'].forEach((v) {
-        data!.add(new Data.fromJson(v));
-      });
+      final dynamic rawData = json['data'];
+      
+      if (rawData is List) {
+        for (var v in rawData) {
+          data!.add(Data.fromJson(v));
+        }
+      } else if (rawData is Map && rawData['products'] is List) {
+        for (var v in rawData['products']) {
+          data!.add(Data.fromJson(v));
+        }
+      }
     }
   }
 

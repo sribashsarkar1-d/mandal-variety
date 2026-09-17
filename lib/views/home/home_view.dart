@@ -9,11 +9,14 @@ import '../../models/category_hierarchy_model.dart';
 import '../../models/banners_model.dart';
 import '../../models/product_list_model.dart';
 import '../../services/api_service.dart';
+import '../../common/cards/product_grid_card.dart';
 import '../../widgets/product_card_widget.dart';
 import '../../common/searchbar/app_search_bar.dart';
 import '../../common/buttons/cart_icon_button.dart';
-import '../product_detail_view.dart';
+import '../product_details/product_details_view.dart';
 import '../product_listing/product_listing_view.dart';
+import '../../viewmodels/product_listing_viewmodel.dart';
+import '../../data/models/product_model.dart';
 
 class HomeView extends StatefulWidget {
   final String? initialSearchQuery;
@@ -300,7 +303,20 @@ class _HomeViewState extends State<HomeView> {
                 hintText: "Search for 'shampoo', 'moisturizer'...",
                 animatedHints: const ["'shampoo'...", "'moisturizer'...", "'oil'..."],
                 onSubmitted: (q) {
-                  // Navigate to search results or handled by AppSearchBar
+                  Navigator.of(context).push(
+                    ProductListingView.route(
+                      type: ListingType.search,
+                      initialSearchQuery: q,
+                    ),
+                  );
+                },
+                onVoiceSubmitted: (q) {
+                  Navigator.of(context).push(
+                    ProductListingView.route(
+                      type: ListingType.voiceSearch,
+                      initialSearchQuery: q,
+                    ),
+                  );
                 },
               ),
             ),
@@ -375,7 +391,14 @@ class _HomeViewState extends State<HomeView> {
         separatorBuilder: (_, __) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           if (index == 0) {
-            return _buildCategoryItem('All', null, Icons.grid_view, theme);
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  ProductListingView.route(type: ListingType.all),
+                );
+              },
+              child: _buildCategoryItem('All', null, Icons.grid_view, theme),
+            );
           }
           final parent = parents[index - 1];
           final imageUrl = _apiService.resolveImageUrl(parent.image);
@@ -383,10 +406,9 @@ class _HomeViewState extends State<HomeView> {
             onTap: () {
               if (parent.id != null) {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProductListingView(
-                      categoryId: parent.id,
-                    ),
+                  ProductListingView.route(
+                    type: ListingType.parentCategory,
+                    parentCategoryId: parent.id,
                   ),
                 );
               }
@@ -446,10 +468,10 @@ class _HomeViewState extends State<HomeView> {
           return GestureDetector(
             onTap: () {
               if (banner.buttonLink != null && banner.buttonLink!.isNotEmpty) {
-                 // For now, route to generic products if link is /products
+                  // For now, route to generic products if link is /products
                  if (banner.buttonLink!.contains('products')) {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ProductListingView()),
+                      ProductListingView.route(type: ListingType.all),
                     );
                  }
               }
@@ -504,7 +526,7 @@ class _HomeViewState extends State<HomeView> {
             onTap: () {
                // Route to product listing as fallback
                Navigator.of(context).push(
-                 MaterialPageRoute(builder: (_) => const ProductListingView()),
+                 ProductListingView.route(type: ListingType.all),
                );
             },
             child: SizedBox(
@@ -550,54 +572,70 @@ class _HomeViewState extends State<HomeView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          parent.name ?? '',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                        ),
-                        if (parent.description != null && parent.description!.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: _apiService.resolveImageUrl(parent.image).isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(_apiService.resolveImageUrl(parent.image)),
+                          fit: BoxFit.cover,
+                          colorFilter: ColorFilter.mode(
+                            Colors.black.withValues(alpha: 0.5),
+                            BlendMode.darken,
+                          ),
+                        )
+                      : null,
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            parent.description!,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            parent.name ?? '',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
                           ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      if (parent.id != null) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ProductListingView(
-                              categoryId: parent.id,
+                          if (parent.description != null && parent.description!.isNotEmpty)
+                            Text(
+                              parent.description!,
+                              style: const TextStyle(fontSize: 12, color: Colors.white70),
                             ),
-                          ),
-                        );
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      minimumSize: Size.zero,
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Text('View All', style: TextStyle(fontSize: 12, color: theme.colorScheme.primary)),
-                        const SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_ios, size: 10, color: theme.colorScheme.primary),
-                      ],
+                    TextButton(
+                      onPressed: () {
+                        if (parent.id != null) {
+                          Navigator.of(context).push(
+                            ProductListingView.route(
+                              type: ListingType.parentCategory,
+                              parentCategoryId: parent.id,
+                            ),
+                          );
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        minimumSize: Size.zero,
+                      ),
+                      child: const Row(
+                        children: [
+                          Text('View All', style: TextStyle(fontSize: 12, color: Colors.white)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_ios, size: 10, color: Colors.white),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
               SizedBox(
                 height: 100,
                 child: ListView.separated(
@@ -609,13 +647,11 @@ class _HomeViewState extends State<HomeView> {
                     final imageUrl = _apiService.resolveImageUrl(child.image);
                     return GestureDetector(
                       onTap: () {
-                         // Navigation using parent_category_id and subcategory_id
-                         // Assuming ProductListingView can handle these filters.
                          Navigator.of(context).push(
-                           MaterialPageRoute(
-                             builder: (_) => ProductListingView(
-                               categoryId: child.id,
-                             ),
+                           ProductListingView.route(
+                             type: ListingType.childCategory,
+                             childCategoryId: child.id,
+                             parentCategoryId: parent.id,
                            ),
                          );
                       },
@@ -669,49 +705,63 @@ class _HomeViewState extends State<HomeView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Top Picks for You',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                  ),
-                  Text(
-                    'Handpicked Products Just for You',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProductListingView()),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: Size.zero,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              image: DecorationImage(
+                image: const NetworkImage('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2000&auto=format&fit=crop'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: 0.5),
+                  BlendMode.darken,
                 ),
-                child: Row(
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('See All', style: TextStyle(fontSize: 12, color: theme.colorScheme.primary)),
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios, size: 10, color: theme.colorScheme.primary),
+                    Text(
+                      'Top Picks for You',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                    Text(
+                      'Handpicked Products Just for You',
+                      style: TextStyle(fontSize: 12, color: Colors.white70),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      ProductListingView.route(type: ListingType.all),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    minimumSize: Size.zero,
+                  ),
+                  child: const Row(
+                    children: [
+                      Text('See All', style: TextStyle(fontSize: 12, color: Colors.white)),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_ios, size: 10, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: products.length > 6 ? 6 : products.length,
+            itemCount: products.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 12,
@@ -735,6 +785,8 @@ class _HomeViewState extends State<HomeView> {
               }
 
               return ProductCardWidget(
+                productId: product.id!,
+                product: product,
                 name: (product.name ?? '').trim().isEmpty ? 'Unnamed Product' : product.name!.trim(),
                 priceText: price,
                 oldPriceText: product.discountPrice != null && product.discountPrice! > 0
@@ -745,9 +797,29 @@ class _HomeViewState extends State<HomeView> {
                 discountBadgeText: discountBadge,
                 onTap: () {
                   if (product.id == null) return;
+                  final mappedProduct = ProductModel(
+                    id: product.id!.toString(),
+                    category: _getCategoryEnum(product.parentCategoryName ?? product.categoryName),
+                    name: (product.name ?? '').trim().isEmpty ? 'Unnamed Product' : product.name!.trim(),
+                    imageUrl: image,
+                    price: product.discountPrice != null && product.discountPrice! > 0
+                        ? double.tryParse(product.discountPrice.toString()) ?? 0.0
+                        : double.tryParse(product.price?.toString() ?? '0') ?? 0.0,
+                    originalPrice: product.discountPrice != null && product.discountPrice! > 0
+                        ? double.tryParse(product.price?.toString() ?? '0') ?? 0.0
+                        : null,
+                    discountTag: discountBadge,
+                    rating: null,
+                    reviewCount: null,
+                    reviews: const [],
+                    stockLeft: product.stockQuantity ?? product.stock,
+                    isFastDelivery: null,
+                    isBestSeller: null,
+                  );
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailView(productId: product.id!),
+                    ProductDetailsView.route(
+                      product: mappedProduct,
+                      currentBottomBarIndex: 0,
                     ),
                   );
                 },
@@ -768,6 +840,19 @@ class _HomeViewState extends State<HomeView> {
     if (normalized.contains('grocer')) return Icons.local_grocery_store;
     if (normalized.contains('baby')) return Icons.child_care;
     return Icons.category;
+  }
+
+  ProductCategory _getCategoryEnum(String? categoryName) {
+    if (categoryName == null) return ProductCategory.grocery;
+    final normalized = categoryName.trim().toLowerCase();
+    if (normalized.contains('beauty')) return ProductCategory.beauty;
+    if (normalized.contains('shoe') || normalized.contains('footwear')) return ProductCategory.shoes;
+    if (normalized.contains('fresh') || normalized.contains('vegetable')) return ProductCategory.fresh;
+    if (normalized.contains('snack')) return ProductCategory.snacks;
+    if (normalized.contains('drink') || normalized.contains('beverage')) return ProductCategory.drinks;
+    if (normalized.contains('dairy')) return ProductCategory.dairy;
+    if (normalized.contains('paan') || normalized.contains('tobacco')) return ProductCategory.tobacco;
+    return ProductCategory.grocery;
   }
 
   Widget _buildLoadingState(ThemeData theme) {

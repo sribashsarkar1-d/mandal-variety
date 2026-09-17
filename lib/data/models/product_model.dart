@@ -82,6 +82,8 @@ class ProductModel {
   final bool? isBestSeller;
   final String? categoryName;
   final int? categoryId;
+  final int? parentCategoryId;
+  final int? subcategoryId;
 
   const ProductModel({
     required this.id,
@@ -102,6 +104,8 @@ class ProductModel {
     this.isBestSeller,
     this.categoryName,
     this.categoryId,
+    this.parentCategoryId,
+    this.subcategoryId,
   });
 
   bool get hasDiscount =>
@@ -126,6 +130,8 @@ class ProductModel {
     bool? isBestSeller,
     String? categoryName,
     int? categoryId,
+    int? parentCategoryId,
+    int? subcategoryId,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -146,6 +152,8 @@ class ProductModel {
       isBestSeller: isBestSeller ?? this.isBestSeller,
       categoryName: categoryName ?? this.categoryName,
       categoryId: categoryId ?? this.categoryId,
+      parentCategoryId: parentCategoryId ?? this.parentCategoryId,
+      subcategoryId: subcategoryId ?? this.subcategoryId,
     );
   }
 }

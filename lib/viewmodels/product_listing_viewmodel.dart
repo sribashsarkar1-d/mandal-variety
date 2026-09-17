@@ -1,9 +1,19 @@
+import 'package:flutter/foundation.dart';
 import '../data/models/product_model.dart';
 import '../core/network/network_error_utils.dart';
 import '../models/product_list_model.dart';
 import '../models/categories_model.dart';
 import '../services/api_service.dart';
 import 'base_viewmodel.dart';
+
+enum ListingType {
+  all,
+  parentCategory,
+  childCategory,
+  search,
+  voiceSearch,
+  related
+}
 
 enum ProductSort {
   popular,
@@ -58,16 +68,22 @@ extension ProductSortX on ProductSort {
 }
 
 class ProductListingViewModel extends BaseViewModel {
-  final ProductCategory? category;
-  final int? categoryId;
+  ListingType type;
+  int? parentCategoryId;
+  int? childCategoryId;
+  String _searchQuery;
+
   final ApiService _apiService = ApiService();
 
-  ProductListingViewModel({this.category, this.categoryId});
+  ProductListingViewModel({
+    this.type = ListingType.all,
+    this.parentCategoryId,
+    this.childCategoryId,
+    String searchQuery = '',
+  }) : _searchQuery = searchQuery;
 
   List<ProductModel> _products = const <ProductModel>[];
   List<ProductModel> get products => _products;
-
-  String _searchQuery = '';
 
   String get searchQuery => _searchQuery;
 
@@ -84,10 +100,21 @@ class ProductListingViewModel extends BaseViewModel {
   bool get hasMore => _hasMore;
 
   List<ProductModel> get filteredProducts {
-    final q = _searchQuery.trim().toLowerCase();
-    final List<ProductModel> base = q.isEmpty
-        ? [..._products]
-        : _products.where((p) => p.name.toLowerCase().contains(q)).toList();
+    List<ProductModel> base = [..._products];
+
+    // Local text filtering only if not an API search mode
+    if (type != ListingType.search && type != ListingType.voiceSearch) {
+      final q = _searchQuery.trim().toLowerCase();
+      if (q.isNotEmpty) {
+        base = base.where((p) => p.name.toLowerCase().contains(q)).toList();
+      }
+    }
+
+    if (type == ListingType.parentCategory && parentCategoryId != null) {
+      base = base.where((p) => p.parentCategoryId == parentCategoryId).toList();
+    } else if (type == ListingType.childCategory && childCategoryId != null) {
+      base = base.where((p) => p.subcategoryId == childCategoryId).toList();
+    }
 
     final List<ProductModel> filtered = switch (_quickFilter) {
       ProductQuickFilter.all => base,
@@ -128,36 +155,47 @@ class ProductListingViewModel extends BaseViewModel {
     setLoading(true);
     clearError();
     try {
-      final responses = await Future.wait([
-        categoryId != null ? _apiService.getProductsByCategory(categoryId!) : _apiService.getProducts(),
-        _apiService.getCategories(),
-      ]);
-      final response = responses[0] as ProductList;
-      final catResponse = responses[1] as Categories;
-      final categoryItems = catResponse.data ?? [];
+      ProductList response;
+      switch (type) {
+        case ListingType.search:
+          if (_searchQuery.trim().isEmpty) {
+            response = ProductList(success: true, data: const <Data>[]);
+          } else {
+            response = await _apiService.searchProducts(query: _searchQuery);
+          }
+          break;
+        case ListingType.voiceSearch:
+          if (_searchQuery.trim().isEmpty) {
+            response = ProductList(success: true, data: const <Data>[]);
+          } else {
+            response = await _apiService.voiceSearch(query: _searchQuery);
+          }
+          break;
+        case ListingType.parentCategory:
+        case ListingType.childCategory:
+        case ListingType.all:
+          response = await _apiService.getProducts();
+          break;
+        case ListingType.related:
+          // In related, we might reuse childCategoryId as the product ID, or similar.
+          // Since it's not strictly specified, let's keep it robust.
+          if (childCategoryId != null) {
+            response = await _apiService.getRelatedProducts(productId: childCategoryId!);
+          } else {
+            response = ProductList(success: true, data: const <Data>[]);
+          }
+          break;
+      }
 
       final mapped = (response.data ?? const <Data>[])
           .asMap()
           .entries
           .map((entry) {
-             final item = entry.value;
-             if ((item.categoryName == null || item.categoryName!.trim().isEmpty) && item.categoryId != null) {
-                final match = categoryItems.where((c) => c.id == item.categoryId);
-                if (match.isNotEmpty) {
-                   item.categoryName = match.first.name;
-                }
-             }
-             return _mapApiProduct(item, entry.key);
-          })
-          .where((p) {
-             if (categoryId != null) return p.categoryId == categoryId;
-             if (category != null) return p.category == category;
-             return true;
+             return _mapApiProduct(entry.value, entry.key);
           })
           .toList(growable: false);
 
       _products = mapped;
-
       _hasMore = false;
     } catch (e) {
       if (isNetworkError(e)) {
@@ -208,7 +246,7 @@ class ProductListingViewModel extends BaseViewModel {
       originalPrice: originalPrice,
       discountTag: discountTag,
       discountPercentage: discountPercent,
-      rating: null,
+      rating: null, // Note: The API response format didn't show ratings, mapping it as null
       reviewCount: null,
       reviews: const [],
       stockLeft: stockLeft,
@@ -217,6 +255,8 @@ class ProductListingViewModel extends BaseViewModel {
       isBestSeller: null,
       categoryName: item.categoryName,
       categoryId: item.categoryId,
+      parentCategoryId: item.parentCategoryId,
+      subcategoryId: item.subcategoryId,
     );
   }
 
@@ -240,9 +280,43 @@ class ProductListingViewModel extends BaseViewModel {
     return ProductCategory.grocery;
   }
 
-  void setSearchQuery(String value) {
-    if (_searchQuery == value) return;
-    _searchQuery = value;
+  void updateSearchQuery(String query) {
+    query = query.trim();
+    if (_searchQuery == query && type == ListingType.search) return;
+    _searchQuery = query;
+    type = ListingType.search;
+    parentCategoryId = null;
+    childCategoryId = null;
+    _quickFilter = ProductQuickFilter.all;
+    notifyListeners();
+  }
+
+  void updateVoiceSearchQuery(String query) {
+    query = query.trim();
+    if (_searchQuery == query && type == ListingType.voiceSearch) return;
+    _searchQuery = query;
+    type = ListingType.voiceSearch;
+    parentCategoryId = null;
+    childCategoryId = null;
+    _quickFilter = ProductQuickFilter.all;
+    notifyListeners();
+  }
+
+  void updateParentCategory(int parentId) {
+    type = ListingType.parentCategory;
+    parentCategoryId = parentId;
+    childCategoryId = null;
+    _searchQuery = '';
+    _quickFilter = ProductQuickFilter.all;
+    notifyListeners();
+  }
+
+  void updateChildCategory(int childId, {int? parentId}) {
+    type = ListingType.childCategory;
+    childCategoryId = childId;
+    parentCategoryId = parentId;
+    _searchQuery = '';
+    _quickFilter = ProductQuickFilter.all;
     notifyListeners();
   }
 

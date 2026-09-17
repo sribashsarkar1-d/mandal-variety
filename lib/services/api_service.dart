@@ -175,6 +175,40 @@ class ApiService {
     return GlobalSearch.fromJson(jsonMap);
   }
 
+  Future<pl.ProductList> searchProducts({required String query}) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      return pl.ProductList(success: true, data: const <pl.Data>[]);
+    }
+    
+    final jsonMap = await _get(
+      'search/products.php',
+      queryParameters: <String, String>{'search': normalized},
+    );
+    return pl.ProductList.fromJson(jsonMap);
+  }
+
+  Future<pl.ProductList> voiceSearch({required String query}) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      return pl.ProductList(success: true, data: const <pl.Data>[]);
+    }
+    
+    final jsonMap = await _post(
+      'search/voice.php',
+      body: <String, dynamic>{'query': normalized},
+    );
+    return pl.ProductList.fromJson(jsonMap);
+  }
+
+  Future<pl.ProductList> getRelatedProducts({required int productId}) async {
+    final jsonMap = await _get(
+      'search/related.php',
+      queryParameters: <String, String>{'product_id': productId.toString()},
+    );
+    return pl.ProductList.fromJson(jsonMap);
+  }
+
   Future<ListPolicies> getPolicies() async {
     debugPrint('[ApiService] getPolicies -> GET policies/list.php (start)');
     try {

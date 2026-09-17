@@ -24,30 +24,34 @@ import '../product_details/product_details_view.dart';
 import 'widgets/product_listing_skeleton.dart';
 
 class ProductListingView extends StatefulWidget {
-  final ProductCategory? category;
-  final int? categoryId;
+  final ListingType type;
   final int currentBottomBarIndex;
   final String? initialSearchQuery;
+  final int? parentCategoryId;
+  final int? childCategoryId;
 
   const ProductListingView({
     super.key,
-    this.category,
-    this.categoryId,
+    this.type = ListingType.all,
     this.currentBottomBarIndex = 0,
     this.initialSearchQuery,
+    this.parentCategoryId,
+    this.childCategoryId,
   });
 
   static Route<void> route({
-    ProductCategory? category,
-    int? categoryId,
+    ListingType type = ListingType.all,
     int currentBottomBarIndex = 0,
     String? initialSearchQuery,
+    int? parentCategoryId,
+    int? childCategoryId,
   }) {
     Widget builder(BuildContext _) => ProductListingView(
-      category: category,
-      categoryId: categoryId,
+      type: type,
       currentBottomBarIndex: currentBottomBarIndex,
       initialSearchQuery: initialSearchQuery,
+      parentCategoryId: parentCategoryId,
+      childCategoryId: childCategoryId,
     );
 
     return PlatformHelper.isIOS
@@ -75,8 +79,9 @@ class _ProductListingViewState extends State<ProductListingView> {
   void initState() {
     super.initState();
     _vm = ProductListingViewModel(
-      category: widget.category,
-      categoryId: widget.categoryId,
+      type: widget.type,
+      parentCategoryId: widget.parentCategoryId,
+      childCategoryId: widget.childCategoryId,
     );
 
     _scrollController = ScrollController();
@@ -84,7 +89,7 @@ class _ProductListingViewState extends State<ProductListingView> {
 
     final initial = widget.initialSearchQuery;
     if (initial != null && initial.trim().isNotEmpty) {
-      _vm.setSearchQuery(initial);
+      _vm.updateSearchQuery(initial);
     }
 
     _vm.load();
@@ -217,12 +222,11 @@ class _ProductListingViewState extends State<ProductListingView> {
         ],
       ),
       child: AppSearchBar(
-        hintText: 'Search ${widget.category?.searchHint ?? 'products'}...',
+        hintText: 'Search products...',
         staticPrefix: 'Search ',
         initialText: widget.initialSearchQuery,
         onChanged: (q) {
-          if (widget.category != ProductCategory.tobacco &&
-              TobaccoKeywordMatcher.isTobaccoQuery(q)) {
+          if (TobaccoKeywordMatcher.isTobaccoQuery(q)) {
             TobaccoSearchRedirector.maybeRedirect(
               context,
               q,
@@ -230,11 +234,11 @@ class _ProductListingViewState extends State<ProductListingView> {
             );
             return;
           }
-          _vm.setSearchQuery(q);
+          _vm.updateSearchQuery(q);
+          _vm.load();
         },
         onSubmitted: (q) {
-          if (widget.category != ProductCategory.tobacco &&
-              TobaccoKeywordMatcher.isTobaccoQuery(q)) {
+          if (TobaccoKeywordMatcher.isTobaccoQuery(q)) {
             TobaccoSearchRedirector.maybeRedirect(
               context,
               q,
@@ -242,7 +246,20 @@ class _ProductListingViewState extends State<ProductListingView> {
             );
             return;
           }
-          _vm.setSearchQuery(q);
+          _vm.updateSearchQuery(q);
+          _vm.load();
+        },
+        onVoiceSubmitted: (q) {
+          if (TobaccoKeywordMatcher.isTobaccoQuery(q)) {
+            TobaccoSearchRedirector.maybeRedirect(
+              context,
+              q,
+              currentBottomBarIndex: widget.currentBottomBarIndex,
+            );
+            return;
+          }
+          _vm.updateVoiceSearchQuery(q);
+          _vm.load();
         },
       ),
     );

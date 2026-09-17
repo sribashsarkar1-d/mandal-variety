@@ -700,21 +700,35 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
           const SizedBox(height: 12),
           
           // Rating
-          Row(
-            children: [
-              const Icon(Icons.star, size: 18, color: Colors.amber),
-              const SizedBox(width: 6),
-              Text(
-                '${_vm.reviewAverageRating?.toStringAsFixed(1) ?? "0.0"} (${_vm.reviewCount} reviews)',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: Color(0xFF546E7A),
+          InkWell(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AllReviewsView(product: widget.product),
                 ),
+              );
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star, size: 18, color: Colors.amber),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${_vm.reviewAverageRating?.toStringAsFixed(1) ?? "0.0"} (${_vm.reviewCount} reviews)',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Color(0xFF546E7A),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 18, color: Color(0xFF546E7A)),
+                ],
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.chevron_right, size: 18, color: Color(0xFF546E7A)),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
           

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 
@@ -23,6 +24,11 @@ class AppTheme {
         backgroundColor: AppColors.lightSurface,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.lightTextPrimary),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
         titleTextStyle: AppTextStyles.heading2.copyWith(
           color: AppColors.lightTextPrimary,
         ),
@@ -88,6 +94,11 @@ class AppTheme {
         backgroundColor: AppColors.darkSurface,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
         titleTextStyle: AppTextStyles.heading2.copyWith(
           color: AppColors.darkTextPrimary,
         ),

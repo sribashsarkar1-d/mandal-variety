@@ -37,7 +37,7 @@ class ApiService {
   final http.Client _client;
 
   static const String _baseUrl = 'https://api.mandal-variety.com';
-  static const Duration _timeout = Duration(seconds: 20);
+  static const Duration _timeout = Duration(seconds: 60);
   static const bool _useBearerAuth = true;
 
   Future<void> saveAuthToken(String token) async {
@@ -182,8 +182,8 @@ class ApiService {
     }
     
     final jsonMap = await _get(
-      'search/products.php',
-      queryParameters: <String, String>{'search': normalized},
+      'search/global.php',
+      queryParameters: <String, String>{'q': normalized},
     );
     return pl.ProductList.fromJson(jsonMap);
   }

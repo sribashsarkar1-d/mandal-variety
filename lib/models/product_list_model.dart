@@ -71,6 +71,9 @@ class Data {
   int? parentCategoryId;
   String? parentCategoryName;
   String? childCategoryName;
+  
+  double? averageRating;
+  int? reviewCount;
 
   Data(
       {this.id,
@@ -108,7 +111,9 @@ class Data {
       this.subcategoryId,
       this.parentCategoryId,
       this.parentCategoryName,
-      this.childCategoryName});
+      this.childCategoryName,
+      this.averageRating,
+      this.reviewCount});
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -167,6 +172,9 @@ class Data {
     parentCategoryId = _parseInt(json['parent_category_id']);
     parentCategoryName = json['parent_category_name'];
     childCategoryName = json['child_category_name'];
+    
+    averageRating = _parseDouble(json['averageRating']) ?? _parseDouble(json['rating']) ?? _parseDouble(json['average_rating']);
+    reviewCount = _parseInt(json['reviewCount']) ?? _parseInt(json['review_count']);
   }
   
   static int? _parseInt(dynamic value) {

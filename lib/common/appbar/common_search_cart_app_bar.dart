@@ -7,6 +7,8 @@ import '../../common/buttons/wishlist_icon_button.dart';
 import '../../common/searchbar/app_search_bar.dart';
 import '../../core/tobacco/tobacco_keyword_matcher.dart';
 import '../../core/tobacco/tobacco_search_redirector.dart';
+import '../../views/product_listing/product_listing_view.dart';
+import '../../viewmodels/product_listing_viewmodel.dart';
 
 class CommonSearchCartAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -75,7 +77,37 @@ class CommonSearchCartAppBar extends StatelessWidget
             );
             return;
           }
-          onSearchChanged?.call(q);
+          if (onSearchChanged != null) {
+            onSearchChanged!(q);
+          } else {
+            Navigator.of(context).push(
+              ProductListingView.route(
+                type: ListingType.search,
+                initialSearchQuery: q,
+              ),
+            );
+          }
+        },
+        onVoiceSubmitted: (q) {
+          if (enableTobaccoRedirect &&
+              TobaccoKeywordMatcher.isTobaccoQuery(q)) {
+            TobaccoSearchRedirector.maybeRedirect(
+              context,
+              q,
+              currentBottomBarIndex: currentBottomBarIndex,
+            );
+            return;
+          }
+          if (onSearchChanged != null) {
+            onSearchChanged!(q); // If a custom callback is provided, fallback to it
+          } else {
+            Navigator.of(context).push(
+              ProductListingView.route(
+                type: ListingType.voiceSearch,
+                initialSearchQuery: q,
+              ),
+            );
+          }
         },
       ),
     );

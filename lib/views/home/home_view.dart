@@ -795,6 +795,8 @@ class _HomeViewState extends State<HomeView> {
                 categoryName: categoryName,
                 imageUrl: image,
                 discountBadgeText: discountBadge,
+                rating: product.averageRating,
+                reviewCount: product.reviewCount,
                 onTap: () {
                   if (product.id == null) return;
                   final mappedProduct = ProductModel(
@@ -809,8 +811,8 @@ class _HomeViewState extends State<HomeView> {
                         ? double.tryParse(product.price?.toString() ?? '0') ?? 0.0
                         : null,
                     discountTag: discountBadge,
-                    rating: null,
-                    reviewCount: null,
+                    rating: product.averageRating,
+                    reviewCount: product.reviewCount,
                     reviews: const [],
                     stockLeft: product.stockQuantity ?? product.stock,
                     isFastDelivery: null,

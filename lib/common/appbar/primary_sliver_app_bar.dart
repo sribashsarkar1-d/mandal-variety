@@ -6,6 +6,8 @@ import '../buttons/wishlist_icon_button.dart';
 import '../../core/tobacco/tobacco_keyword_matcher.dart';
 import '../../core/tobacco/tobacco_search_redirector.dart';
 import '../../core/utils/platform_helper.dart';
+import '../../views/product_listing/product_listing_view.dart';
+import '../../viewmodels/product_listing_viewmodel.dart';
 
 class PrimarySliverAppBar extends StatelessWidget {
   final String searchHintText;
@@ -86,7 +88,37 @@ class PrimarySliverAppBar extends StatelessWidget {
                       );
                       return;
                     }
-                    onSearchChanged?.call(q);
+                    if (onSearchChanged != null) {
+                      onSearchChanged!(q);
+                    } else {
+                      Navigator.of(context).push(
+                        ProductListingView.route(
+                          type: ListingType.search,
+                          initialSearchQuery: q,
+                        ),
+                      );
+                    }
+                  },
+                  onVoiceSubmitted: (q) {
+                    if (enableTobaccoRedirect &&
+                        TobaccoKeywordMatcher.isTobaccoQuery(q)) {
+                      TobaccoSearchRedirector.maybeRedirect(
+                        context,
+                        q,
+                        currentBottomBarIndex: currentBottomBarIndex,
+                      );
+                      return;
+                    }
+                    if (onSearchChanged != null) {
+                      onSearchChanged!(q);
+                    } else {
+                      Navigator.of(context).push(
+                        ProductListingView.route(
+                          type: ListingType.voiceSearch,
+                          initialSearchQuery: q,
+                        ),
+                      );
+                    }
                   },
                 ),
               ),

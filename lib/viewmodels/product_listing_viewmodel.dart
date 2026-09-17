@@ -255,8 +255,8 @@ class ProductListingViewModel extends BaseViewModel {
       originalPrice: originalPrice,
       discountTag: discountTag,
       discountPercentage: discountPercent,
-      rating: null, // Note: The API response format didn't show ratings, mapping it as null
-      reviewCount: null,
+      rating: item.averageRating,
+      reviewCount: item.reviewCount,
       reviews: const [],
       stockLeft: stockLeft,
       isFastDelivery: isFastDelivery,

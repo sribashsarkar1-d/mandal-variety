@@ -383,7 +383,7 @@ class _HomeViewState extends State<HomeView> {
     if (parents.isEmpty) return const SizedBox.shrink();
     
     return SizedBox(
-      height: 90,
+      height: 110,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -514,7 +514,7 @@ class _HomeViewState extends State<HomeView> {
     ];
 
     return SizedBox(
-      height: 80,
+      height: 100,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -637,7 +637,7 @@ class _HomeViewState extends State<HomeView> {
               ),
                   const SizedBox(height: 16),
               SizedBox(
-                height: 100,
+                height: 110,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: children.length,

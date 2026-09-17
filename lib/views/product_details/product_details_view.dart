@@ -853,16 +853,19 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF388E3C),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
                     icon: _isAddingToCart 
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : Icon(_vm.isInCart ? Icons.shopping_bag : Icons.shopping_cart_outlined, size: 20),
-                    label: Text(
-                      _vm.isInCart ? 'Go to Cart' : 'Add to Cart',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _vm.isInCart ? 'Go to Cart' : 'Add to Cart',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
@@ -873,7 +876,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black87,
                       side: const BorderSide(color: Color(0xFFEEEEEE)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: Icon(
@@ -881,9 +884,12 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                       color: const Color(0xFFFF3366),
                       size: 20,
                     ),
-                    label: const Text(
-                      'Add to Wishlist',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Add to Wishlist',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
@@ -1097,25 +1103,35 @@ class _ImageGallery extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: urls.isNotEmpty
-                    ? PageView.builder(
-                        controller: pageController,
-                        itemCount: urls.length,
-                        onPageChanged: onPageChanged,
-                        itemBuilder: (_, index) {
-                          final url = urls[index];
-                          return GestureDetector(
-                            onTap: () => onZoomTap(url),
-                            child: Image(
-                              image: _resolveImageProvider(url),
-                              fit: BoxFit.contain,
-                            ),
-                          );
-                        },
-                      )
-                    : Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 48, color: Colors.grey)),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: urls.isNotEmpty
+                      ? PageView.builder(
+                          controller: pageController,
+                          itemCount: urls.length,
+                          onPageChanged: onPageChanged,
+                          itemBuilder: (_, index) {
+                            final url = urls[index];
+                            return GestureDetector(
+                              onTap: () => onZoomTap(url),
+                              child: Container(
+                                color: Colors.white,
+                                child: Image(
+                                  image: _resolveImageProvider(url),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 48, color: Colors.grey)),
+                ),
               ),
               // Index Badge
               if (urls.length > 1)
@@ -1152,20 +1168,25 @@ class _ImageGallery extends StatelessWidget {
                     pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                   },
                   child: Container(
-                    margin: const EdgeInsets.only(right: 8),
+                    margin: const EdgeInsets.only(right: 12),
                     width: 64,
+                    padding: EdgeInsets.all(isActive ? 3 : 0),
                     decoration: BoxDecoration(
+                      color: Colors.white,
                       border: Border.all(
-                        color: isActive ? const Color(0xFF388E3C) : Colors.grey.withOpacity(0.3),
+                        color: isActive ? const Color(0xFF388E3C) : Colors.grey.withOpacity(0.2),
                         width: isActive ? 2 : 1,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(isActive ? 10 : 8),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image(
-                        image: _resolveImageProvider(urls[index]),
-                        fit: BoxFit.cover,
+                      borderRadius: BorderRadius.circular(isActive ? 6 : 8),
+                      child: Container(
+                        color: Colors.white,
+                        child: Image(
+                          image: _resolveImageProvider(urls[index]),
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),

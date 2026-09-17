@@ -346,7 +346,7 @@ class _WishlistViewState extends State<WishlistView>
                   final cardWidth = ((screenWidth - 32 - 12) / 2)
                       .clamp(150.0, 220.0)
                       .toDouble();
-                  final cardHeight = cardWidth / 0.58;
+                  final cardHeight = cardWidth / 0.65; // Match home screen layout
 
                   return SizedBox(
                     height: cardHeight,

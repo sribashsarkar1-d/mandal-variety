@@ -95,7 +95,7 @@ class ApiService {
   Future<pl.ProductList> getProductsByCategory(int categoryId) async {
     final jsonMap = await _get(
       'categories/products.php',
-      queryParameters: <String, String>{'id': categoryId.toString()},
+      queryParameters: <String, String>{'category_id': categoryId.toString()},
     );
     return pl.ProductList.fromJson(jsonMap);
   }

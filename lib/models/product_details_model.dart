@@ -263,10 +263,10 @@ class Data {
       }
       
       // Otherwise treat as a single string, maybe comma separated? Let's just return as single item list for now
-      // Or split by comma
-      if (text.contains(',')) {
-         final list = text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-         debugPrint('Parsed from comma string: $list');
+      // Or split by comma or space
+      if (text.contains(',') || text.contains(' ')) {
+         final list = text.split(RegExp(r'[\s,]+')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+         debugPrint('Parsed from comma/space string: $list');
          return list;
       }
       

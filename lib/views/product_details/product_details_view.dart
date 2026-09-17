@@ -766,82 +766,86 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
           ),
           const SizedBox(height: 20),
           
-          // Stock
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4F9F4),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  outOfStock ? Icons.cancel : Icons.check_circle,
-                  color: outOfStock ? const Color(0xFFFF3366) : const Color(0xFF388E3C),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      outOfStock ? 'Out of Stock' : 'In Stock',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+          // Stock and Qty
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F9F4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        outOfStock ? Icons.cancel : Icons.check_circle,
                         color: outOfStock ? const Color(0xFFFF3366) : const Color(0xFF388E3C),
+                        size: 20,
                       ),
-                    ),
-                    if (!outOfStock && stockLeft != null)
-                      Text(
-                        '$stockLeft available',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF546E7A)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              outOfStock ? 'Out of Stock' : 'In Stock',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: outOfStock ? const Color(0xFFFF3366) : const Color(0xFF388E3C),
+                              ),
+                            ),
+                            if (!outOfStock && stockLeft != null)
+                              Text(
+                                '$stockLeft available',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF546E7A)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
                       ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Actions
-          if (!outOfStock) ...[
-            // Qty
-            Center(
-              child: Container(
-                width: 120,
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, color: Color(0xFF388E3C), size: 20),
-                      onPressed: _vm.quantity > 1 ? _decrementQty : null,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    Text(
-                      '${_vm.quantity}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add, color: Color(0xFF388E3C), size: 20),
-                      onPressed: _incrementQty,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              if (!outOfStock)
+                Container(
+                  width: 110,
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove, color: Color(0xFF388E3C), size: 20),
+                        onPressed: _vm.quantity > 1 ? _decrementQty : null,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      Text(
+                        '${_vm.quantity}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add, color: Color(0xFF388E3C), size: 20),
+                        onPressed: _incrementQty,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
             const SizedBox(height: 16),
             
             // Buttons

@@ -133,7 +133,10 @@ class Data {
     // Parse images, could be string or list
     if (json['images'] != null) {
       if (json['images'] is String) {
-        images = [json['images']];
+        final text = (json['images'] as String).trim();
+        if (text.isNotEmpty) {
+          images = text.split(RegExp(r'[\s,]+')).where((e) => e.isNotEmpty).toList();
+        }
       } else if (json['images'] is List) {
         images = json['images'].cast<String>();
       }

@@ -15,6 +15,8 @@ import '../../viewmodels/orders_viewmodel.dart';
 import '../main/main_view.dart';
 import '../product_details/reviews_view.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+
 const String _fallbackImageAsset = 'assets/logo/mandal_logo.png';
 
 bool _isHttpUrl(String value) =>
@@ -29,7 +31,7 @@ ImageProvider _resolveImageProvider(String source) {
     return AssetImage(value);
   }
   if (_isHttpUrl(value)) {
-    return NetworkImage(value);
+    return CachedNetworkImageProvider(value);
   }
   return const AssetImage(_fallbackImageAsset);
 }

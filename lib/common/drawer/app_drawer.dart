@@ -21,6 +21,8 @@ import '../../views/main/main_view.dart';
 import '../../views/product_listing/product_listing_view.dart';
 import '../dialogs/app_dialog.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+
 const String _fallbackImageAsset = 'assets/logo/mandal_logo.png';
 
 bool _isHttpUrl(String value) =>
@@ -35,7 +37,7 @@ ImageProvider _resolveImageProvider(String source) {
     return AssetImage(value);
   }
   if (_isHttpUrl(value)) {
-    return NetworkImage(value);
+    return CachedNetworkImageProvider(value);
   }
   return const AssetImage(_fallbackImageAsset);
 }

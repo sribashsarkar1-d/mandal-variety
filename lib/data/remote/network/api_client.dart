@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/rest_api_config.dart';
@@ -64,15 +66,25 @@ class ApiClient {
         request.body = jsonEncode(body);
       }
 
+      if (kDebugMode) {
+        debugPrint('[API] URL: $uri');
+      }
+
       final streamedResponse = await _httpClient
           .send(request)
-          .timeout(RestApiConfig.requestTimeout);
+          .timeout(const Duration(seconds: 20));
+          
       final response = await http.Response.fromStream(streamedResponse);
       final responseBody = response.body;
 
+      if (kDebugMode) {
+        debugPrint('[API] STATUS: ${response.statusCode}');
+        debugPrint('[API] RESPONSE LENGTH: ${responseBody.length}');
+      }
+
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw ApiException(
-          message: 'Request failed for $method $path',
+          message: 'Server error: ${response.statusCode}',
           statusCode: response.statusCode,
           responseBody: responseBody,
         );
@@ -87,20 +99,24 @@ class ApiClient {
         return decoded;
       }
 
-      throw ApiException(
-        message: 'Expected object JSON response but got ${decoded.runtimeType}',
-        statusCode: response.statusCode,
-        responseBody: responseBody,
-      );
+      throw const FormatException('Expected object JSON response');
+    } on SocketException catch (e) {
+      if (kDebugMode) debugPrint('[API] ERROR: $e');
+      rethrow;
+    } on TimeoutException catch (e) {
+      if (kDebugMode) debugPrint('[API] ERROR: $e');
+      rethrow;
+    } on FormatException catch (e) {
+      if (kDebugMode) debugPrint('[API] ERROR: $e');
+      rethrow;
     } on http.ClientException catch (error) {
-      throw ApiException(message: 'No internet connection: $error');
-    } on TimeoutException {
-      throw ApiException(message: 'Request timed out');
-    } on FormatException catch (error) {
-      throw ApiException(message: 'Invalid JSON response: $error');
-    } on ApiException {
+      if (kDebugMode) debugPrint('[API] ERROR: $error');
+      rethrow;
+    } on ApiException catch (e) {
+      if (kDebugMode) debugPrint('[API] ERROR: $e');
       rethrow;
     } catch (error) {
+      if (kDebugMode) debugPrint('[API] ERROR: $error');
       throw ApiException(message: 'Unexpected API error: $error');
     }
   }

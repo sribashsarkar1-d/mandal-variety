@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../common/cards/app_card.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -19,7 +20,7 @@ ImageProvider _resolveImageProvider(String source) {
     return AssetImage(value);
   }
   if (_isHttpUrl(value)) {
-    return NetworkImage(value);
+    return CachedNetworkImageProvider(value);
   }
   return const AssetImage(_fallbackImageAsset);
 }

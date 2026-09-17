@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/pages/no_internet_page.dart';
@@ -9,6 +10,8 @@ import '../../models/category_hierarchy_model.dart';
 import '../../models/banners_model.dart';
 import '../../models/product_list_model.dart';
 import '../../services/api_service.dart';
+import '../../services/api_cache_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../common/cards/product_grid_card.dart';
 import '../../widgets/product_card_widget.dart';
 import '../../common/searchbar/app_search_bar.dart';
@@ -30,14 +33,16 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   final ApiService _apiService = ApiService();
 
-  late Future<_HomePayload> _homeFuture;
+  _HomePayload? _cachedPayload;
+  bool _isLoading = true;
+  Object? _error;
   int _retryCount = 0;
   String _addressDisplay = 'Detecting location...';
 
   @override
   void initState() {
     super.initState();
-    _homeFuture = _loadHomeData();
+    _loadHomeData();
     _loadAddress();
   }
 
@@ -70,43 +75,134 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  Future<_HomePayload> _loadHomeData() async {
-    final results = await Future.wait<dynamic>([
-      _apiService.getCategoryHierarchy(),
-      _apiService.getBanners(),
-      _apiService.getProducts(),
-    ]);
+  String _getFriendlyErrorMessage(Object e) {
+    final msg = e.toString().toLowerCase();
+    if (isNetworkError(e)) {
+      return 'No internet connection. Please check your network and try again.';
+    } else if (msg.contains('timeout') || msg.contains('timed out')) {
+      return 'Request timed out. Please try again.';
+    } else if (msg.contains('server error') || msg.contains('500') || msg.contains('502') || msg.contains('503') || msg.contains('504')) {
+      return 'Server is temporarily unavailable. Please try again.';
+    } else if (e is FormatException || msg.contains('format') || msg.contains('json') || msg.contains('expected object')) {
+      return 'Unable to load data. Please try again.';
+    }
+    return 'Something went wrong. Please try again.';
+  }
 
-    final hierarchy = results[0] as CategoryHierarchyModel;
-    final banners = results[1] as BannersModel;
-    final products = results[2] as ProductList;
+  void _parseAndSetCachedData(Map<String, dynamic> cachedData) {
+    try {
+      final hierarchy = CategoryHierarchyModel.fromJson(cachedData['hierarchy']);
+      final banners = BannersModel.fromJson(cachedData['banners']);
+      final products = ProductList.fromJson(cachedData['products']);
 
-    final parents = (hierarchy.data ?? <HierarchyParentModel>[])
-        .where((item) => (item.isActive ?? 1) == 1)
-        .toList();
+      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
+          .where((item) => (item.isActive ?? 1) == 1)
+          .toList();
 
-    final bannerItems = (banners.data ?? <BannerItemModel>[])
-        .where((item) => (item.isActive ?? 1) == 1)
-        .toList()
-      ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
+      final bannerItems = (banners.data ?? <BannerItemModel>[])
+          .where((item) => (item.isActive ?? 1) == 1)
+          .toList()
+        ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
 
-    final productItems = products.data ?? <Data>[];
+      final productItems = products.data ?? <Data>[];
 
-    return _HomePayload(
-      parents: parents,
-      banners: bannerItems,
-      products: productItems,
-    );
+      if (mounted) {
+        setState(() {
+          _cachedPayload = _HomePayload(
+            parents: parents,
+            banners: bannerItems,
+            products: productItems,
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      // Ignore cache parsing errors
+    }
+  }
+
+  Future<void> _loadHomeData() async {
+    final cachedData = await ApiCacheService.instance.getCachedJson('home_payload');
+    if (cachedData != null) {
+      _parseAndSetCachedData(cachedData);
+    } else {
+      if (mounted) setState(() { _isLoading = true; _error = null; });
+    }
+
+    try {
+      final results = await Future.wait<dynamic>([
+        _apiService.getCategoryHierarchy(),
+        _apiService.getBanners(),
+        _apiService.getProducts(),
+      ]);
+
+      final hierarchy = results[0] as CategoryHierarchyModel;
+      final banners = results[1] as BannersModel;
+      final products = results[2] as ProductList;
+
+      // Save to cache for next visit
+      await ApiCacheService.instance.cacheJson('home_payload', {
+        'hierarchy': hierarchy.toJson(),
+        'banners': banners.toJson(),
+        'products': products.toJson(),
+      });
+
+      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
+          .where((item) => (item.isActive ?? 1) == 1)
+          .toList();
+
+      final bannerItems = (banners.data ?? <BannerItemModel>[])
+          .where((item) => (item.isActive ?? 1) == 1)
+          .toList()
+        ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
+
+      final productItems = products.data ?? <Data>[];
+
+      if (mounted) {
+        setState(() {
+          _cachedPayload = _HomePayload(
+            parents: parents,
+            banners: bannerItems,
+            products: productItems,
+          );
+          _isLoading = false;
+          _error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        if (_cachedPayload == null) {
+          setState(() {
+            _error = e;
+            _isLoading = false;
+          });
+        }
+        
+        if (_cachedPayload != null) {
+          // If we have cached data, don't show full error screen, just a snackbar
+          setState(() { _isLoading = false; _error = null; });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_getFriendlyErrorMessage(e)),
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: _retryHomeLoad,
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _refresh() async {
-    final future = _loadHomeData();
-    setState(() => _homeFuture = future);
-    await future;
+    if (_isLoading) return;
+    await _loadHomeData();
     _loadAddress();
   }
 
   Future<void> _retryHomeLoad() async {
+    if (_isLoading) return;
     setState(() => _retryCount++);
     await _refresh();
   }
@@ -115,24 +211,25 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: FutureBuilder<_HomePayload>(
-        future: _homeFuture,
-        builder: (context, snapshot) {
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                _buildHeaderSliver(theme),
-                _buildStateContent(context, snapshot, theme),
-              ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: RefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-          );
-        },
+            slivers: [
+              _buildHeaderSliver(theme),
+              _buildStateContent(theme),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -326,17 +423,32 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildStateContent(
-    BuildContext context,
-    AsyncSnapshot<_HomePayload> snapshot,
-    ThemeData theme,
-  ) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
+  Widget _buildStateContent(ThemeData theme) {
+    if (_isLoading && _cachedPayload == null) {
       return SliverToBoxAdapter(child: _buildLoadingState(theme));
     }
 
-    if (snapshot.hasError) {
-      if (isNetworkError(snapshot.error)) {
+    if (_cachedPayload != null) {
+      final payload = _cachedPayload!;
+      return SliverList(
+        delegate: SliverChildListDelegate([
+          const SizedBox(height: 16),
+          _buildParentCategoryCarousel(payload.parents, theme),
+          const SizedBox(height: 24),
+          if (payload.banners.isNotEmpty) _buildBannerCarousel(payload.banners, theme),
+          const SizedBox(height: 24),
+          _buildQuickActions(theme),
+          const SizedBox(height: 16),
+          ..._buildCategorySections(payload.parents, theme),
+          const SizedBox(height: 16),
+          if (payload.products.isNotEmpty) _buildTopPicks(payload.products, theme),
+          const SizedBox(height: 32),
+        ]),
+      );
+    }
+
+    if (_error != null) {
+      if (isNetworkError(_error)) {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: NoInternetPage(
@@ -348,34 +460,15 @@ class _HomeViewState extends State<HomeView> {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: _ErrorState(
-          message: snapshot.error.toString(),
-          onRetry: _refresh,
+          message: _getFriendlyErrorMessage(_error!),
+          onRetry: _retryHomeLoad,
         ),
       );
     }
 
-    final payload = snapshot.data;
-    if (payload == null) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: _ErrorState(message: 'No data found.', onRetry: _refresh),
-      );
-    }
-
-    return SliverList(
-      delegate: SliverChildListDelegate([
-        const SizedBox(height: 16),
-        _buildParentCategoryCarousel(payload.parents, theme),
-        const SizedBox(height: 24),
-        if (payload.banners.isNotEmpty) _buildBannerCarousel(payload.banners, theme),
-        const SizedBox(height: 24),
-        _buildQuickActions(theme),
-        const SizedBox(height: 16),
-        ..._buildCategorySections(payload.parents, theme),
-        const SizedBox(height: 16),
-        if (payload.products.isNotEmpty) _buildTopPicks(payload.products, theme),
-        const SizedBox(height: 32),
-      ]),
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: _ErrorState(message: 'No data found.', onRetry: _retryHomeLoad),
     );
   }
 
@@ -578,7 +671,7 @@ class _HomeViewState extends State<HomeView> {
                   borderRadius: BorderRadius.circular(12),
                   image: _apiService.resolveImageUrl(parent.image).isNotEmpty
                       ? DecorationImage(
-                          image: NetworkImage(_apiService.resolveImageUrl(parent.image)),
+                          image: CachedNetworkImageProvider(_apiService.resolveImageUrl(parent.image)),
                           fit: BoxFit.cover,
                           colorFilter: ColorFilter.mode(
                             Colors.black.withValues(alpha: 0.5),
@@ -710,7 +803,7 @@ class _HomeViewState extends State<HomeView> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               image: DecorationImage(
-                image: const NetworkImage('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2000&auto=format&fit=crop'),
+                image: const CachedNetworkImageProvider('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2000&auto=format&fit=crop'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withValues(alpha: 0.5),

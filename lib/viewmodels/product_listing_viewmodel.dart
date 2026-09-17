@@ -3,7 +3,9 @@ import '../data/models/product_model.dart';
 import '../core/network/network_error_utils.dart';
 import '../models/product_list_model.dart';
 import '../models/categories_model.dart';
+import '../models/category_hierarchy_model.dart';
 import '../services/api_service.dart';
+import '../services/api_cache_service.dart';
 import 'base_viewmodel.dart';
 
 enum ListingType {
@@ -156,22 +158,61 @@ class ProductListingViewModel extends BaseViewModel {
     }
   }
 
+  String get _cacheKey {
+    switch (type) {
+      case ListingType.search:
+      case ListingType.voiceSearch:
+        final q = _searchQuery.trim().toLowerCase();
+        return q.isEmpty ? 'products_all_aggregated' : 'products_search_$q';
+      case ListingType.parentCategory:
+        return 'products_parent_$parentCategoryId';
+      case ListingType.childCategory:
+        return 'products_child_$childCategoryId';
+      case ListingType.all:
+        return 'products_all_aggregated';
+      case ListingType.related:
+        return 'products_related_$childCategoryId';
+    }
+  }
+
+  void _parseAndSetCachedData(Map<String, dynamic> cachedData) {
+    try {
+      final response = ProductList.fromJson(cachedData);
+      final mapped = (response.data ?? const <Data>[])
+          .asMap()
+          .entries
+          .map((entry) {
+             return _mapApiProduct(entry.value, entry.key);
+          })
+          .toList(growable: false);
+      _products = mapped;
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<void> load() async {
-    setLoading(true);
+    final cachedData = await ApiCacheService.instance.getCachedJson(_cacheKey);
+    if (cachedData != null) {
+      _parseAndSetCachedData(cachedData);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+    
     clearError();
     try {
       ProductList response;
       switch (type) {
         case ListingType.search:
           if (_searchQuery.trim().isEmpty) {
-            response = ProductList(success: true, data: const <Data>[]);
+            response = await _fetchAllProductsAggregated();
           } else {
             response = await _apiService.searchProducts(query: _searchQuery);
           }
           break;
         case ListingType.voiceSearch:
           if (_searchQuery.trim().isEmpty) {
-            response = ProductList(success: true, data: const <Data>[]);
+            response = await _fetchAllProductsAggregated();
           } else {
             response = await _apiService.voiceSearch(query: _searchQuery);
           }
@@ -183,7 +224,7 @@ class ProductListingViewModel extends BaseViewModel {
           response = await _apiService.getProducts();
           break;
         case ListingType.all:
-          response = await _apiService.getProducts();
+          response = await _fetchAllProductsAggregated();
           break;
         case ListingType.related:
           // In related, we might reuse childCategoryId as the product ID, or similar.
@@ -203,6 +244,11 @@ class ProductListingViewModel extends BaseViewModel {
              return _mapApiProduct(entry.value, entry.key);
           })
           .toList(growable: false);
+
+      // Save to cache for next visit
+      if (response.success == true && response.data != null) {
+        ApiCacheService.instance.cacheJson(_cacheKey, response.toJson());
+      }
 
       _products = mapped;
       _hasMore = false;
@@ -353,5 +399,46 @@ class ProductListingViewModel extends BaseViewModel {
       _isLoadingMore = false;
       notifyListeners();
     }
+  }
+
+  Future<ProductList> _fetchAllProductsAggregated() async {
+    try {
+      final hierarchy = await _apiService.getCategoryHierarchy();
+      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
+          .where((item) => (item.isActive ?? 1) == 1)
+          .toList();
+
+      final List<Data> allProducts = [];
+      final Set<int> seenIds = {};
+
+      final futures = parents.map((parent) async {
+        if (parent.id != null) {
+          try {
+            final catProducts = await _apiService.getProductsByCategory(parent.id!);
+            return catProducts.data ?? <Data>[];
+          } catch (_) {
+            return <Data>[];
+          }
+        }
+        return <Data>[];
+      });
+
+      final results = await Future.wait(futures);
+      for (final list in results) {
+        for (final p in list) {
+          if (p.id != null && !seenIds.contains(p.id)) {
+            seenIds.add(p.id!);
+            allProducts.add(p);
+          }
+        }
+      }
+
+      if (allProducts.isNotEmpty) {
+        return ProductList(success: true, data: allProducts);
+      }
+    } catch (_) {
+      // Ignore errors and fallback
+    }
+    return await _apiService.getProducts();
   }
 }

@@ -813,8 +813,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
               const SizedBox(width: 12),
               if (!outOfStock)
                 Container(
-                  width: 110,
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -823,23 +822,28 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.remove, color: Color(0xFF388E3C), size: 20),
                         onPressed: _vm.quantity > 1 ? _decrementQty : null,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
-                      Text(
-                        '${_vm.quantity}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      Container(
+                        width: 28,
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${_vm.quantity}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.add, color: Color(0xFF388E3C), size: 20),
                         onPressed: _incrementQty,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
                     ],
                   ),

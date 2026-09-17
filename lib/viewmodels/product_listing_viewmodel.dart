@@ -110,9 +110,16 @@ class ProductListingViewModel extends BaseViewModel {
       }
     }
 
-    // Category filtering is now handled by the API in load()
-    // We don't need local category filtering, especially since parentCategoryId 
-    // might not be present in all API responses.
+    // Local category filtering
+    if (type == ListingType.parentCategory && parentCategoryId != null) {
+      base = base.where((p) => 
+        p.parentCategoryId == parentCategoryId || p.categoryId == parentCategoryId
+      ).toList();
+    } else if (type == ListingType.childCategory && childCategoryId != null) {
+      base = base.where((p) => 
+        p.categoryId == childCategoryId || p.subcategoryId == childCategoryId
+      ).toList();
+    }
 
     final List<ProductModel> filtered = switch (_quickFilter) {
       ProductQuickFilter.all => base,
@@ -170,18 +177,10 @@ class ProductListingViewModel extends BaseViewModel {
           }
           break;
         case ListingType.parentCategory:
-          if (parentCategoryId != null) {
-            response = await _apiService.getProductsByCategory(parentCategoryId!);
-          } else {
-            response = await _apiService.getProducts();
-          }
+          response = await _apiService.getProducts();
           break;
         case ListingType.childCategory:
-          if (childCategoryId != null) {
-            response = await _apiService.getProductsByCategory(childCategoryId!);
-          } else {
-            response = await _apiService.getProducts();
-          }
+          response = await _apiService.getProducts();
           break;
         case ListingType.all:
           response = await _apiService.getProducts();

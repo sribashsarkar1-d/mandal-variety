@@ -49,6 +49,7 @@ class OrdersViewModel extends BaseViewModel {
         _orders = response.data!.orders!
             .where((order) => (order.totalAmount ?? 0.0) < 100000.0)
             .toList();
+        notifyListeners();
       } else {
         setError(response.message ?? 'Failed to load orders.');
       }

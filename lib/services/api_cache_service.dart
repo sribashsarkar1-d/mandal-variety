@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class ApiCacheService {
@@ -25,16 +26,21 @@ class ApiCacheService {
     final jsonString = _box!.get(key);
     if (jsonString != null) {
       try {
-        return jsonDecode(jsonString) as Map<String, dynamic>;
-      } catch (_) {
+        final decoded = await compute(_decodeJson, jsonString);
+        return decoded;
+      } catch (e) {
+        debugPrint('Cache decode error for key $key: $e');
         return null;
       }
     }
     return null;
   }
-  
   Future<void> clearCache() async {
     await init();
     await _box!.clear();
   }
+}
+
+Map<String, dynamic> _decodeJson(String data) {
+  return jsonDecode(data) as Map<String, dynamic>;
 }

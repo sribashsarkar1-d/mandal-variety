@@ -132,6 +132,30 @@ class _OrdersViewState extends State<OrdersView> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
+              ] else if (_viewModel.hasError && !hasOrders) ...[
+                // ── Error State ──────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 60.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.wifi_off_rounded, size: 64, color: theme.colorScheme.error.withValues(alpha: 0.5)),
+                        const SizedBox(height: 16),
+                        Text(
+                          _viewModel.errorMessage ?? 'Failed to load orders',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyLarge,
+                        ),
+                        const SizedBox(height: 24),
+                        AppButton.primary(
+                          text: 'Retry',
+                          onPressed: () => _viewModel.fetchOrders(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ] else if (hasOrders) ...[
                 // ── Summary Strip ────────────────────
                 SliverToBoxAdapter(

@@ -203,8 +203,16 @@ class ProductDetailsViewModel extends BaseViewModel {
     if (productId == null) return;
 
     try {
-      final detail = await _apiService.getProductDetails(productId);
-      final detailData = detail.data;
+      final detailFuture = _apiService.getProductDetails(productId);
+      final reviewFuture = _apiService.getReviewsList(productId: productId).catchError((_) => null);
+      final listFuture = _apiService.getProducts().catchError((_) => null);
+      
+      final results = await Future.wait([detailFuture, reviewFuture, listFuture]);
+      final detail = results[0] as dynamic;
+      final reviewResponse = results[1] as dynamic;
+      final list = results[2] as dynamic;
+      
+      final detailData = detail?.data;
 
       if (detailData != null) {
         debugPrint('--- [DEBUG] Viewmodel hydrating from API ---');
@@ -278,31 +286,25 @@ class ProductDetailsViewModel extends BaseViewModel {
         _apiStockLeft = detailData.stockQuantity ?? detailData.stock;
       }
 
-      try {
-        final reviewResponse = await _apiService.getReviewsList(
-          productId: productId,
-        );
+      if (reviewResponse != null) {
         _apiAverageRating = reviewResponse.averageRating;
         _apiReviewCount = reviewResponse.reviewCount;
-
         final filtered = (reviewResponse.data ?? const <review_model.Data>[])
             .where(_shouldRenderReview)
             .toList(growable: true);
-
         filtered.sort((a, b) {
           final ratingCmp = (b.rating ?? 0).compareTo(a.rating ?? 0);
           if (ratingCmp != 0) return ratingCmp;
           return _safeReviewDate(b).compareTo(_safeReviewDate(a));
         });
         _apiReviews = filtered.toList(growable: false);
-      } catch (_) {
+      } else {
         _apiAverageRating = null;
         _apiReviewCount = null;
         _apiReviews = const <review_model.Data>[];
       }
 
-      final list = await _apiService.getProducts();
-      final apiAll = (list.data ?? const <Data>[])
+      final apiAll = (list?.data ?? const <Data>[])
           .where(
             (item) => item.id != null && (item.name ?? '').trim().isNotEmpty,
           )

@@ -310,30 +310,32 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                     const SizedBox(height: 6),
                     
                     // Rating
-                    Row(
-                      children: [
-                        const Icon(Icons.star, size: 14, color: Colors.amber),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.rating?.toStringAsFixed(1) ?? '0.0',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        if (widget.reviewCount != null) ...[
+                    if (widget.rating != null && widget.rating! > 0) ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
                           const SizedBox(width: 4),
                           Text(
-                            '(${widget.reviewCount})',
+                            widget.rating!.toStringAsFixed(1),
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
                           ),
+                          if (widget.reviewCount != null && widget.reviewCount! > 0) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              '(${widget.reviewCount})',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 6),
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                     
                     // Price
                     Row(

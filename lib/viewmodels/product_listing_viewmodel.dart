@@ -402,43 +402,6 @@ class ProductListingViewModel extends BaseViewModel {
   }
 
   Future<ProductList> _fetchAllProductsAggregated() async {
-    try {
-      final hierarchy = await _apiService.getCategoryHierarchy();
-      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
-          .where((item) => (item.isActive ?? 1) == 1)
-          .toList();
-
-      final List<Data> allProducts = [];
-      final Set<int> seenIds = {};
-
-      final futures = parents.map((parent) async {
-        if (parent.id != null) {
-          try {
-            final catProducts = await _apiService.getProductsByCategory(parent.id!);
-            return catProducts.data ?? <Data>[];
-          } catch (_) {
-            return <Data>[];
-          }
-        }
-        return <Data>[];
-      });
-
-      final results = await Future.wait(futures);
-      for (final list in results) {
-        for (final p in list) {
-          if (p.id != null && !seenIds.contains(p.id)) {
-            seenIds.add(p.id!);
-            allProducts.add(p);
-          }
-        }
-      }
-
-      if (allProducts.isNotEmpty) {
-        return ProductList(success: true, data: allProducts);
-      }
-    } catch (_) {
-      // Ignore errors and fallback
-    }
     return await _apiService.getProducts();
   }
 }

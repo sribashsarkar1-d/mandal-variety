@@ -10,6 +10,7 @@ import '../../common/bottombar/common_bottom_bar.dart';
 import '../../common/buttons/app_button.dart';
 import '../../common/cards/app_card.dart';
 import '../../common/cards/product_grid_card.dart';
+import '../../common/image/app_cached_image.dart';
 import '../../common/image_viewer/zoomable_image_viewer.dart';
 import '../../common/snackbars/app_snackbar.dart';
 import '../../common/pages/no_internet_page.dart';
@@ -1145,8 +1146,8 @@ class _ImageGallery extends StatelessWidget {
                               onTap: () => onZoomTap(url),
                               child: Container(
                                 color: Colors.white,
-                                child: Image(
-                                  image: _resolveImageProvider(url),
+                                child: AppCachedImage(
+                                  imageUrl: url,
                                   fit: BoxFit.contain,
                                 ),
                               ),

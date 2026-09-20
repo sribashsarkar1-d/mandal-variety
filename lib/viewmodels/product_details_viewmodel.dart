@@ -205,7 +205,7 @@ class ProductDetailsViewModel extends BaseViewModel {
     try {
       final detailFuture = _apiService.getProductDetails(productId);
       final reviewFuture = _apiService.getReviewsList(productId: productId).catchError((_) => null);
-      final listFuture = _apiService.getProducts().catchError((_) => null);
+      final listFuture = _apiService.getRelatedProducts(productId: productId).catchError((_) => null);
       
       final results = await Future.wait([detailFuture, reviewFuture, listFuture]);
       final detail = results[0] as dynamic;

@@ -89,82 +89,75 @@ class _HomeViewState extends State<HomeView> {
     return 'Something went wrong. Please try again.';
   }
 
-  void _parseAndSetCachedData(Map<String, dynamic> cachedData) {
-    try {
-      final hierarchy = CategoryHierarchyModel.fromJson(cachedData['hierarchy']);
-      final banners = BannersModel.fromJson(cachedData['banners']);
-      final products = ProductList.fromJson(cachedData['products']);
 
-      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
-          .where((item) => (item.isActive ?? 1) == 1)
-          .toList();
 
-      final bannerItems = (banners.data ?? <BannerItemModel>[])
-          .where((item) => (item.isActive ?? 1) == 1)
-          .toList()
-        ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
+  void _updatePayload(CategoryHierarchyModel hierarchy, BannersModel banners, ProductList products) {
+    final parents = (hierarchy.data ?? <HierarchyParentModel>[])
+        .where((item) => (item.isActive ?? 1) == 1)
+        .toList();
 
-      final productItems = products.data ?? <Data>[];
+    final bannerItems = (banners.data ?? <BannerItemModel>[])
+        .where((item) => (item.isActive ?? 1) == 1)
+        .toList()
+      ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
 
-      if (mounted) {
-        setState(() {
-          _cachedPayload = _HomePayload(
-            parents: parents,
-            banners: bannerItems,
-            products: productItems,
-          );
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      // Ignore cache parsing errors
+    final productItems = products.data ?? <Data>[];
+
+    if (mounted) {
+      setState(() {
+        _cachedPayload = _HomePayload(
+          parents: parents,
+          banners: bannerItems,
+          products: productItems,
+        );
+      });
     }
   }
 
   Future<void> _loadHomeData() async {
-    final cachedData = await ApiCacheService.instance.getCachedJson('home_payload');
-    if (cachedData != null) {
-      _parseAndSetCachedData(cachedData);
-    } else {
-      if (mounted) setState(() { _isLoading = true; _error = null; });
+    if (mounted && _cachedPayload == null) {
+      setState(() { _isLoading = true; _error = null; });
     }
 
+    final cacheService = ApiCacheService.instance;
+    await cacheService.init();
+
+    // 1. Try to load from cache
+    final cachedHierarchyJson = await cacheService.getCachedJson('home_hierarchy');
+    final cachedBannersJson = await cacheService.getCachedJson('home_banners');
+    final cachedProductsJson = await cacheService.getCachedJson('home_products');
+
+    if (cachedHierarchyJson != null && cachedBannersJson != null && cachedProductsJson != null) {
+      try {
+        final hierarchy = CategoryHierarchyModel.fromJson(cachedHierarchyJson);
+        final banners = BannersModel.fromJson(cachedBannersJson);
+        final products = ProductList.fromJson(cachedProductsJson);
+        
+        _updatePayload(hierarchy, banners, products);
+        if (mounted) setState(() { _isLoading = false; });
+      } catch (_) {}
+    }
+
+    // 2. Fetch fresh data in the background
     try {
       final results = await Future.wait<dynamic>([
-        _apiService.getCategoryHierarchy(),
-        _apiService.getBanners(),
-        _apiService.getProducts(),
+        _apiService.getCategoryHierarchy().catchError((_) => CategoryHierarchyModel(success: true, data: [])),
+        _apiService.getBanners().catchError((_) => BannersModel(success: true, data: [])),
+        _apiService.getProducts().catchError((_) => ProductList(success: true, data: [])),
       ]);
 
       final hierarchy = results[0] as CategoryHierarchyModel;
       final banners = results[1] as BannersModel;
       final products = results[2] as ProductList;
 
-      // Save to cache for next visit
-      await ApiCacheService.instance.cacheJson('home_payload', {
-        'hierarchy': hierarchy.toJson(),
-        'banners': banners.toJson(),
-        'products': products.toJson(),
-      });
+      await cacheService.cacheJson('home_hierarchy', hierarchy.toJson());
+      await cacheService.cacheJson('home_banners', banners.toJson());
+      await cacheService.cacheJson('home_products', products.toJson());
 
-      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
-          .where((item) => (item.isActive ?? 1) == 1)
-          .toList();
-
-      final bannerItems = (banners.data ?? <BannerItemModel>[])
-          .where((item) => (item.isActive ?? 1) == 1)
-          .toList()
-        ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
-
-      final productItems = products.data ?? <Data>[];
+      _updatePayload(hierarchy, banners, products);
 
       if (mounted) {
         setState(() {
-          _cachedPayload = _HomePayload(
-            parents: parents,
-            banners: bannerItems,
-            products: productItems,
-          );
           _isLoading = false;
           _error = null;
         });
@@ -176,9 +169,7 @@ class _HomeViewState extends State<HomeView> {
             _error = e;
             _isLoading = false;
           });
-        }
-        
-        if (_cachedPayload != null) {
+        } else {
           // If we have cached data, don't show full error screen, just a snackbar
           setState(() { _isLoading = false; _error = null; });
           ScaffoldMessenger.of(context).showSnackBar(

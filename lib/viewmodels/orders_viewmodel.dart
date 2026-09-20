@@ -39,21 +39,29 @@ class OrdersViewModel extends BaseViewModel {
     }).toList();
   }
 
+  int _retryCount = 0;
+
   Future<void> fetchOrders() async {
     setLoading(true);
     clearError();
     try {
       final response = await _apiService.getOrdersList();
       if (response.success == true && response.data != null && response.data!.orders != null) {
-        // Exclude astronomical stress-test mock orders (e.g. > 100,000) to keep presentation pricing real
         _orders = response.data!.orders!
             .where((order) => (order.totalAmount ?? 0.0) < 100000.0)
             .toList();
+        _retryCount = 0;
         notifyListeners();
       } else {
         setError(response.message ?? 'Failed to load orders.');
       }
     } catch (e) {
+      if (_retryCount < 2) {
+        _retryCount++;
+        await Future.delayed(const Duration(seconds: 2));
+        return fetchOrders();
+      }
+      
       if (isNetworkError(e)) {
         setNetworkError();
       } else {

@@ -191,14 +191,7 @@ class ProductListingViewModel extends BaseViewModel {
   }
 
   Future<void> load() async {
-    final cachedData = await ApiCacheService.instance.getCachedJson(_cacheKey);
-    if (cachedData != null) {
-      _parseAndSetCachedData(cachedData);
-      setLoading(false);
-    } else {
-      setLoading(true);
-    }
-    
+    setLoading(true);
     clearError();
     try {
       ProductList response;
@@ -218,10 +211,10 @@ class ProductListingViewModel extends BaseViewModel {
           }
           break;
         case ListingType.parentCategory:
-          response = await _apiService.getProducts();
+          response = await _apiService.getProductsByCategory(parentCategoryId!);
           break;
         case ListingType.childCategory:
-          response = await _apiService.getProducts();
+          response = await _apiService.getProductsByCategory(childCategoryId!);
           break;
         case ListingType.all:
           response = await _fetchAllProductsAggregated();
@@ -245,18 +238,15 @@ class ProductListingViewModel extends BaseViewModel {
           })
           .toList(growable: false);
 
-      // Save to cache for next visit
-      if (response.success == true && response.data != null) {
-        ApiCacheService.instance.cacheJson(_cacheKey, response.toJson());
-      }
-
       _products = mapped;
       _hasMore = false;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('ProductListing error: $e');
+      debugPrint('StackTrace: $st');
       if (isNetworkError(e)) {
         setNetworkError();
       } else {
-        setError('Failed to load products.');
+        setError('Failed to load products. Error: $e');
       }
     } finally {
       setLoading(false);
@@ -402,6 +392,38 @@ class ProductListingViewModel extends BaseViewModel {
   }
 
   Future<ProductList> _fetchAllProductsAggregated() async {
+    try {
+      final hierarchy = await _apiService.getCategoryHierarchy();
+      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
+          .where((item) => (item.isActive ?? 1) == 1)
+          .toList();
+
+      final List<Data> allProducts = [];
+      final Set<int> seenIds = {};
+
+      for (final parent in parents) {
+        if (parent.id != null) {
+          try {
+            final catProducts = await _apiService.getProductsByCategory(parent.id!);
+            final list = catProducts.data ?? <Data>[];
+            for (final p in list) {
+              if (p.id != null && !seenIds.contains(p.id)) {
+                seenIds.add(p.id!);
+                allProducts.add(p);
+              }
+            }
+          } catch (_) {
+            // Ignore errors for individual categories and continue
+          }
+        }
+      }
+
+      if (allProducts.isNotEmpty) {
+        return ProductList(success: true, data: allProducts);
+      }
+    } catch (e) {
+      debugPrint('Fallback aggregation failed: $e');
+    }
     return await _apiService.getProducts();
   }
 }

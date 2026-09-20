@@ -8,6 +8,8 @@ import '../../core/auth/auth_coordinator.dart';
 import '../../views/auth/email_login_view.dart';
 import '../../views/main/main_view.dart';
 import '../../viewmodels/splash_viewmodel.dart';
+import '../../services/api_service.dart';
+import '../../services/api_cache_service.dart';
 
 // ============================================================================
 // MANDAL VARIETY — SPLASH SCREEN
@@ -37,6 +39,28 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       onComplete: _navigateToMain,
     );
+    _prefetchHomeData();
+  }
+
+  Future<void> _prefetchHomeData() async {
+    final apiService = ApiService();
+    final cacheService = ApiCacheService.instance;
+    await cacheService.init();
+
+    try {
+      final hierarchy = await apiService.getCategoryHierarchy();
+      await cacheService.cacheJson('home_hierarchy', hierarchy.toJson());
+    } catch (_) {}
+
+    try {
+      final banners = await apiService.getBanners();
+      await cacheService.cacheJson('home_banners', banners.toJson());
+    } catch (_) {}
+
+    try {
+      final products = await apiService.getProducts();
+      await cacheService.cacheJson('home_products', products.toJson());
+    } catch (_) {}
   }
 
   void _navigateToMain() {

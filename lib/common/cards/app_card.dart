@@ -47,7 +47,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    Color defaultColor = backgroundColor ?? theme.colorScheme.surface;
+    Color defaultColor = backgroundColor ?? theme.colorScheme.surface.withValues(alpha: 0.85);
     Border? border;
 
     if (variant == AppCardVariant.selectable) {

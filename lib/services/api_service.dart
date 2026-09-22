@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../core/auth/auth_coordinator.dart';
 
 import '../models/cart_add_model.dart';
+import '../models/app_background_model.dart';
 import '../models/add_review_model.dart';
 import '../models/cart_clear_model.dart';
 import '../models/cart_detail_model.dart';
@@ -86,6 +87,11 @@ class ApiService {
   Future<BannersModel> getBanners() async {
     final jsonMap = await _get('banners/list.php');
     return BannersModel.fromJson(jsonMap);
+  }
+
+  Future<AppBackgroundModel> getAppBackground() async {
+    final jsonMap = await _get('appbackimage/get.php');
+    return AppBackgroundModel.fromJson(jsonMap);
   }
 
   Future<pl.ProductList> getProducts() async {

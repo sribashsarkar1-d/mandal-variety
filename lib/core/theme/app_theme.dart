@@ -9,7 +9,7 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.light,
       primaryColor: AppColors.lightPrimary,
-      scaffoldBackgroundColor: AppColors.lightBackground,
+      scaffoldBackgroundColor: Colors.transparent,
       colorScheme: const ColorScheme.light(
         primary: AppColors.lightPrimary,
         secondary: AppColors.lightAccent,
@@ -21,7 +21,7 @@ class AppTheme {
         onError: Colors.white,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.lightSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.lightTextPrimary),
         systemOverlayStyle: const SystemUiOverlayStyle(
@@ -79,7 +79,7 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.dark,
       primaryColor: AppColors.darkPrimary,
-      scaffoldBackgroundColor: AppColors.darkBackground,
+      scaffoldBackgroundColor: Colors.transparent,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.darkPrimary,
         secondary: AppColors.darkAccent,
@@ -91,7 +91,7 @@ class AppTheme {
         onError: Colors.black,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
         systemOverlayStyle: const SystemUiOverlayStyle(

@@ -178,7 +178,7 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.colorScheme.surface.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

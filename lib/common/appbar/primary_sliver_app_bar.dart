@@ -37,7 +37,7 @@ class PrimarySliverAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SliverAppBar(
-      backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.98),
+      backgroundColor: Colors.transparent,
       elevation: 0,
       floating: true,
       pinned: false,

@@ -274,9 +274,7 @@ class _ProfileTopCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: onSurface.withValues(alpha: 0.08)),
-        color: isDark
-            ? AppColors.darkPrimary.withValues(alpha: 0.08)
-            : AppColors.lightPrimary.withValues(alpha: 0.06),
+        color: theme.colorScheme.surface.withValues(alpha: 0.85),
       ),
       child: Row(
         children: [
@@ -343,6 +341,7 @@ class _ProfileInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: onSurface.withValues(alpha: 0.08)),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

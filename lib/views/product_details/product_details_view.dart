@@ -262,7 +262,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
       animation: _vm,
       builder: (context, _) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF4F9F4), // Light Green Background
+          backgroundColor: Colors.transparent,
           appBar: CommonSearchCartAppBar(
             searchHintText: 'Search ${widget.product.category.searchHint}...',
             searchStaticPrefix: 'Search ',
@@ -356,7 +356,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
             padding: const EdgeInsets.all(16.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -395,7 +395,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
             padding: const EdgeInsets.all(24.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -464,7 +464,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -499,7 +499,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -555,7 +555,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(

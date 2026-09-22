@@ -718,7 +718,6 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
             left: 20,
             right: 20,
           ),
-          color: theme.scaffoldBackgroundColor,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -782,7 +781,6 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           left: 20,
           right: 20,
         ),
-        color: theme.scaffoldBackgroundColor,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -878,7 +876,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     final isGuest = _isGuest;
 
     return Drawer(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.90),
       child: Column(
         children: [
           _buildDrawerHeader(context),
@@ -1129,24 +1127,6 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       context,
                       MaterialPageRoute(
                         builder: (context) => CancellationPolicyView(
-                          currentBottomBarIndex:
-                              widget.currentBottomBarIndex ?? 0,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  context,
-                  title: '18+ Age Restriction Policy',
-                  icon: Icons.warning_amber_outlined,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AgeRestrictionPolicyView(
                           currentBottomBarIndex:
                               widget.currentBottomBarIndex ?? 0,
                         ),

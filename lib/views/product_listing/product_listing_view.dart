@@ -200,7 +200,7 @@ class _ProductListingViewState extends State<ProductListingView> {
     final onSurface = theme.colorScheme.onSurface;
     final primary = theme.primaryColor;
 
-    final headerBg = theme.scaffoldBackgroundColor.withValues(alpha: 0.98);
+    final headerBg = Colors.transparent;
     final topInset = MediaQuery.paddingOf(context).top;
 
     final searchBar = Container(

@@ -104,16 +104,12 @@ class _ExpandableSectionState extends State<_ExpandableSection>
           curve: Curves.easeInOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: _expanded
-                ? (isDark
-                      ? AppColors.darkPrimary.withValues(alpha: 0.07)
-                      : AppColors.lightPrimary.withValues(alpha: 0.05))
-                : Colors.transparent,
+            color: theme.colorScheme.surface.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _expanded
                   ? primary.withValues(alpha: 0.25)
-                  : onSurface.withValues(alpha: 0.08),
+                  : theme.dividerColor.withValues(alpha: 0.5),
               width: 1,
             ),
           ),
@@ -252,52 +248,29 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
 
   Future<_PrivacyPolicyPayload> _loadPolicy() async {
     debugPrint(
-      '[PrivacyPolicyView] _loadPolicy -> start (detail + ListPolicies APIs)',
+      '[PrivacyPolicyView] _loadPolicy -> start',
     );
     try {
-      final results = await Future.wait<dynamic>([
-        _apiService.getPolicyDetail(slug: 'privacy-policy'),
-        _apiService.getPolicies(),
-      ]);
-
-      final detailResponse = results[0] as PolicyDetail;
-      final listResponse = results[1] as ListPolicies;
-
-      debugPrint(
-        '[PrivacyPolicyView] _loadPolicy <- ListPolicies '
-        'success=${listResponse.success} items=${listResponse.data?.length ?? 0}',
-      );
-
-      final detail = detailResponse.data;
-      if (detailResponse.success != true || detail == null) {
-        throw const ApiServiceException('Unable to load Privacy Policy.');
-      }
+      final listResponse = await _apiService.getPolicies();
 
       PolicyListItem? listItem;
-      var printedPolicySlugCount = 0;
       for (final item in listResponse.data ?? const <PolicyListItem>[]) {
-        if (printedPolicySlugCount < _maxPolicySlugDebugPrints) {
-          debugPrint('Checking policy list item: ${item.slug}');
-          printedPolicySlugCount += 1;
-        }
         if ((item.slug ?? '').trim().toLowerCase() == 'privacy-policy') {
           listItem = item;
           break;
         }
       }
 
-      final totalPolicyItems = listResponse.data?.length ?? 0;
-      if (totalPolicyItems > _maxPolicySlugDebugPrints) {
-        debugPrint(
-          '[PrivacyPolicyView] policy slug debug logs limited to '
-          '$_maxPolicySlugDebugPrints of $totalPolicyItems items',
-        );
+      if (listItem == null) {
+        throw const ApiServiceException('Unable to load Privacy Policy.');
       }
 
-      debugPrint(
-        '[PrivacyPolicyView] _loadPolicy -> matched list item '
-        'slug=${listItem?.slug ?? 'not-found'}',
+      final detail = PolicyDetailData(
+        title: listItem.title,
+        content: listItem.content ?? listItem.shortDescription,
+        shortDescription: listItem.shortDescription,
       );
+
       return _PrivacyPolicyPayload(detail: detail, listItem: listItem);
     } catch (e) {
       debugPrint('[PrivacyPolicyView] _loadPolicy <- error: $e');
@@ -695,83 +668,88 @@ class _HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Icon + description row ────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Shield icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: primary.withValues(alpha: isDark ? 0.18 : 0.10),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: primary.withValues(alpha: 0.22),
-                    width: 1.5,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Icon + description row ────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Shield icon
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: isDark ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: primary.withValues(alpha: 0.22),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.privacy_tip_outlined,
+                    size: 28,
+                    color: primary,
                   ),
                 ),
-                child: Icon(
-                  Icons.privacy_tip_outlined,
-                  size: 28,
-                  color: primary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Description + last-updated badge
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      description,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: onSurface.withValues(alpha: 0.62),
-                        height: 1.6,
+                const SizedBox(width: 16),
+                // Description + last-updated badge
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        description,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: onSurface.withValues(alpha: 0.85),
+                          height: 1.6,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Last updated badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: primary.withValues(alpha: isDark ? 0.14 : 0.08),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.update_rounded,
-                            size: 13,
-                            color: primary.withValues(alpha: 0.85),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'Last updated: ${lastUpdatedLabel ?? 'Recently'}',
-                            style: AppTextStyles.caption.copyWith(
+                      const SizedBox(height: 12),
+                      // Last updated badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primary.withValues(alpha: isDark ? 0.14 : 0.08),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.update_rounded,
+                              size: 13,
                               color: primary.withValues(alpha: 0.85),
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.3,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 5),
+                            Text(
+                              'Last updated: ${lastUpdatedLabel ?? 'Recently'}',
+                              style: AppTextStyles.caption.copyWith(
+                                color: primary.withValues(alpha: 0.85),
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Divider(color: onSurface.withValues(alpha: 0.08), height: 1),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

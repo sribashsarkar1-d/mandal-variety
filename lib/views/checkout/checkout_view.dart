@@ -932,6 +932,8 @@ class _CheckoutViewState extends State<CheckoutView> {
             baseSmallOrder;
 
         return Scaffold(
+          backgroundColor: Colors.transparent,
+          extendBody: true,
           appBar: CommonAppBar(title: 'Checkout'),
           body: SafeArea(
             child: _cartVm.isLoading
@@ -1045,7 +1047,7 @@ class _CheckoutViewState extends State<CheckoutView> {
             child: Container(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
+                color: theme.colorScheme.surface.withValues(alpha: 0.85),
                 border: Border(
                   top: BorderSide(
                     color: theme.dividerColor.withValues(alpha: 0.45),

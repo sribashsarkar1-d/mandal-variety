@@ -32,6 +32,7 @@ class PolicyListItem {
   String? slug;
   String? type;
   String? shortDescription;
+  String? content;
   String? status;
   String? visibility;
   int? isFeatured;
@@ -43,6 +44,7 @@ class PolicyListItem {
     this.slug,
     this.type,
     this.shortDescription,
+    this.content,
     this.status,
     this.visibility,
     this.isFeatured,
@@ -55,6 +57,7 @@ class PolicyListItem {
     slug = json['slug']?.toString();
     type = json['type']?.toString();
     shortDescription = json['short_description']?.toString();
+    content = json['content']?.toString();
     status = json['status']?.toString();
     visibility = json['visibility']?.toString();
     isFeatured = _asInt(json['is_featured']);
@@ -68,6 +71,7 @@ class PolicyListItem {
     map['slug'] = slug;
     map['type'] = type;
     map['short_description'] = shortDescription;
+    map['content'] = content;
     map['status'] = status;
     map['visibility'] = visibility;
     map['is_featured'] = isFeatured;

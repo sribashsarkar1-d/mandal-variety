@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CategoryItemWidget extends StatelessWidget {
   const CategoryItemWidget({
@@ -55,28 +56,22 @@ class CategoryItemWidget extends StatelessWidget {
               ),
               child: ClipOval(
                 child: _hasImage
-                    ? Image.network(
-                        imageUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHigh,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Icon(
                           icon,
                           color: isSelected
                               ? selectedColor
                               : theme.colorScheme.onSurfaceVariant,
                           size: 26,
                         ),
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) {
-                            return child;
-                          }
-                          return const Center(
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          );
-                        },
                       )
                     : Icon(
                         icon,

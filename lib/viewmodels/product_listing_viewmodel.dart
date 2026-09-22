@@ -211,10 +211,10 @@ class ProductListingViewModel extends BaseViewModel {
           }
           break;
         case ListingType.parentCategory:
-          response = await _apiService.getProductsByCategory(parentCategoryId!);
+          response = await _fetchAllProductsAggregated();
           break;
         case ListingType.childCategory:
-          response = await _apiService.getProductsByCategory(childCategoryId!);
+          response = await _fetchAllProductsAggregated();
           break;
         case ListingType.all:
           response = await _fetchAllProductsAggregated();
@@ -392,38 +392,6 @@ class ProductListingViewModel extends BaseViewModel {
   }
 
   Future<ProductList> _fetchAllProductsAggregated() async {
-    try {
-      final hierarchy = await _apiService.getCategoryHierarchy();
-      final parents = (hierarchy.data ?? <HierarchyParentModel>[])
-          .where((item) => (item.isActive ?? 1) == 1)
-          .toList();
-
-      final List<Data> allProducts = [];
-      final Set<int> seenIds = {};
-
-      for (final parent in parents) {
-        if (parent.id != null) {
-          try {
-            final catProducts = await _apiService.getProductsByCategory(parent.id!);
-            final list = catProducts.data ?? <Data>[];
-            for (final p in list) {
-              if (p.id != null && !seenIds.contains(p.id)) {
-                seenIds.add(p.id!);
-                allProducts.add(p);
-              }
-            }
-          } catch (_) {
-            // Ignore errors for individual categories and continue
-          }
-        }
-      }
-
-      if (allProducts.isNotEmpty) {
-        return ProductList(success: true, data: allProducts);
-      }
-    } catch (e) {
-      debugPrint('Fallback aggregation failed: $e');
-    }
     return await _apiService.getProducts();
   }
 }

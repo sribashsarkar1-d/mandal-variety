@@ -1493,16 +1493,23 @@ class _ProductDetailsTable extends StatelessWidget {
     final leftRows = <_TableEntry>[
       if ((brand ?? '').trim().isNotEmpty) _TableEntry('Brand', brand!.trim(), Icons.sell_outlined),
       if ((unitLabel ?? '').trim().isNotEmpty) _TableEntry('Unit', unitLabel!.trim(), Icons.inventory_2_outlined),
+      if ((sku ?? '').trim().isNotEmpty) _TableEntry('SKU', sku!.trim(), Icons.qr_code_outlined),
+      if ((weight ?? '').trim().isNotEmpty) _TableEntry('Weight', weight!.trim(), Icons.scale_outlined),
       if ((countryOfOrigin ?? '').trim().isNotEmpty) _TableEntry('Country of origin', countryOfOrigin!.trim(), Icons.language_outlined),
       if ((deliveryType ?? '').trim().isNotEmpty) _TableEntry('Delivery type', deliveryType!.trim(), Icons.local_shipping_outlined),
+      if (manufacturingDate != null) _TableEntry('Mfg Date', '${manufacturingDate!.day}/${manufacturingDate!.month}/${manufacturingDate!.year}', Icons.calendar_today_outlined),
     ];
     
     final rightRows = <_TableEntry>[
+      if ((attributes ?? '').trim().isNotEmpty) _TableEntry('Attributes', attributes!.trim(), Icons.info_outline),
       if ((estimatedDeliveryTime ?? '').trim().isNotEmpty) _TableEntry('Estimated delivery', estimatedDeliveryTime!.trim(), Icons.schedule_outlined),
-      if (discountPercentage != null) _TableEntry('Discount', '$discountPercentage% off', Icons.percent_outlined),
-      if (deliveryCharge != null) _TableEntry('Delivery charge', 'Rs $deliveryCharge', Icons.currency_rupee_outlined),
+      if (discountPercentage != null && discountPercentage! > 0) _TableEntry('Discount', '$discountPercentage% off', Icons.percent_outlined),
+      if (freeDelivery == true) _TableEntry('Delivery', 'Free', Icons.local_shipping),
+      if (freeDelivery != true && deliveryCharge != null) _TableEntry('Delivery charge', 'Rs $deliveryCharge', Icons.currency_rupee_outlined),
       if (maxOrderQuantity != null) _TableEntry('Max order', '$maxOrderQuantity', Icons.shopping_cart_checkout),
       if (minOrderQuantity != null) _TableEntry('Min order', '$minOrderQuantity', Icons.shopping_cart_checkout),
+      if (couponApplicable == true) _TableEntry('Coupon', 'Available', Icons.local_offer_outlined),
+      if (expiryDate != null) _TableEntry('Expiry Date', '${expiryDate!.day}/${expiryDate!.month}/${expiryDate!.year}', Icons.event_busy_outlined),
     ];
 
     return Row(
@@ -1529,9 +1536,13 @@ class _ProductDetailsTable extends StatelessWidget {
               style: const TextStyle(color: Color(0xFF546E7A), fontSize: 12),
             ),
           ),
-          Text(
-            entry.value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              entry.value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
           ),
         ],
       ),

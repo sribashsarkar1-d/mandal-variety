@@ -205,7 +205,7 @@ class _Headline extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          "It seems there's something wrong with your\ninternet connection. Please check your\nnetwork and try again.",
+          "Unable to connect to the server. Please\ncheck your network connection or\ntry again later.",
           textAlign: TextAlign.center,
           style: AppTextStyles.bodyLarge.copyWith(
             color: textSecondary,

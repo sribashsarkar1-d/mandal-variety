@@ -40,6 +40,8 @@ class ProductDetailsViewModel extends BaseViewModel {
   bool _isWishlisted = false;
   bool get isWishlisted => _isWishlisted;
 
+  bool _isDisposed = false;
+
   List<String> _imageUrls = const [];
   List<String> get imageUrls => _imageUrls;
 
@@ -163,6 +165,8 @@ class ProductDetailsViewModel extends BaseViewModel {
     setLoading(true);
     clearError();
 
+    bool success = false;
+
     try {
       _imageUrls = product.imageUrl.trim().isNotEmpty
           ? <String>[product.imageUrl]
@@ -185,7 +189,8 @@ class ProductDetailsViewModel extends BaseViewModel {
       _recommendedProducts = const <ProductModel>[];
       _categorySearchProducts = const <ProductModel>[];
 
-      await _hydrateFromApi();
+      await _fetchProductDetails();
+      success = true;
     } catch (e) {
       if (isNetworkError(e)) {
         setNetworkError();
@@ -193,26 +198,24 @@ class ProductDetailsViewModel extends BaseViewModel {
         setError('Failed to load product.');
       }
     } finally {
-      setLoading(false);
-      notifyListeners();
+      if (!_isDisposed) {
+        setLoading(false);
+        notifyListeners();
+        if (success && !hasError) {
+          _fetchReviewsAndRelatedInBackground();
+        }
+      }
     }
   }
 
-  Future<void> _hydrateFromApi() async {
+  Future<void> _fetchProductDetails() async {
     final productId = int.tryParse(product.id);
     if (productId == null) return;
 
     try {
-      final detailFuture = _apiService.getProductDetails(productId);
-      final reviewFuture = _apiService.getReviewsList(productId: productId).catchError((_) => null);
-      final listFuture = _apiService.getRelatedProducts(productId: productId).catchError((_) => null);
-      
-      final results = await Future.wait([detailFuture, reviewFuture, listFuture]);
-      final detail = results[0] as dynamic;
-      final reviewResponse = results[1] as dynamic;
-      final list = results[2] as dynamic;
-      
-      final detailData = detail?.data;
+      final detail = await _apiService.getProductDetails(productId);
+      final detailData = detail.data;
+
 
       if (detailData != null) {
         debugPrint('--- [DEBUG] Viewmodel hydrating from API ---');
@@ -266,6 +269,16 @@ class ProductDetailsViewModel extends BaseViewModel {
         _apiDeliveryCharge = detailData.deliveryCharge;
         _apiFreeDelivery = detailData.freeDelivery;
 
+        if ((detailData.sku ?? '').trim().isNotEmpty) {
+          _apiSku = detailData.sku;
+        }
+        if ((detailData.weight ?? '').trim().isNotEmpty) {
+          _apiWeight = detailData.weight;
+        }
+        if ((detailData.attributes ?? '').trim().isNotEmpty) {
+          _apiAttributes = detailData.attributes;
+        }
+
         final base = double.tryParse(
           (detailData.price ?? '').toString().trim(),
         );
@@ -285,6 +298,29 @@ class ProductDetailsViewModel extends BaseViewModel {
 
         _apiStockLeft = detailData.stockQuantity ?? detailData.stock;
       }
+    } catch (e) {
+      if (isNetworkError(e)) rethrow;
+    }
+  }
+
+  Future<void> _fetchReviewsAndRelatedInBackground() async {
+    final productId = int.tryParse(product.id);
+    if (productId == null) return;
+
+    try {
+      final reviewFuture = _apiService.getReviewsList(productId: productId)
+          .then<review_model.ListReview?>((v) => v)
+          .catchError((_) => null);
+      
+      final listFuture = _apiService.getRelatedProducts(productId: productId)
+          .then<ProductList?>((v) => v)
+          .catchError((_) => null);
+      
+      final results = await Future.wait([reviewFuture, listFuture]);
+      if (_isDisposed) return;
+
+      final reviewResponse = results[0] as review_model.ListReview?;
+      final list = results[1] as ProductList?;
 
       if (reviewResponse != null) {
         _apiAverageRating = reviewResponse.averageRating;
@@ -313,8 +349,6 @@ class ProductDetailsViewModel extends BaseViewModel {
           .entries
           .map((entry) {
             final item = entry.value;
-            // Note: In details view we might not have all categories loaded,
-            // but we can at least pass through the item's existing categoryName
             return _mapApiProduct(item, entry.key);
           })
           .toList(growable: false);
@@ -338,9 +372,10 @@ class ProductDetailsViewModel extends BaseViewModel {
             .take(6)
             .toList(growable: false);
       }
+
+      notifyListeners();
     } catch (e) {
-      if (isNetworkError(e)) rethrow;
-      // Preserve already-loaded API/list item data if detail hydration fails.
+      // Background fetch failed silently, do not break main UI.
     }
   }
 
@@ -378,6 +413,8 @@ class ProductDetailsViewModel extends BaseViewModel {
       isBestSeller: null,
       categoryName: item.categoryName,
       categoryId: item.categoryId,
+      parentCategoryId: item.parentCategoryId,
+      subcategoryId: item.subcategoryId,
     );
   }
 
@@ -401,6 +438,19 @@ class ProductDetailsViewModel extends BaseViewModel {
     return ProductCategory.grocery;
   }
 
+  int get _maxAllowedQuantity {
+    int maxLimit = 999;
+    if (productMaxOrderQuantity != null && productMaxOrderQuantity! > 0) {
+      maxLimit = productMaxOrderQuantity!;
+    }
+    if (displayStockLeft != null && displayStockLeft! >= 0) {
+      if (displayStockLeft! < maxLimit) {
+        maxLimit = displayStockLeft!;
+      }
+    }
+    return maxLimit > 0 ? maxLimit : 1;
+  }
+
   void _syncCartSnapshot(List<CartItemModel> items) {
     final match = items.cast<CartItemModel?>().firstWhere(
       (e) => e?.productId == product.id,
@@ -414,7 +464,7 @@ class ProductDetailsViewModel extends BaseViewModel {
 
     final targetQty = (_cartQuantity > 0 ? _cartQuantity : _quantity).clamp(
       1,
-      999,
+      _maxAllowedQuantity,
     );
     if (_quantity != targetQty) {
       _quantity = targetQty;
@@ -432,13 +482,14 @@ class ProductDetailsViewModel extends BaseViewModel {
   }
 
   void setQuantity(int value) {
-    final next = value.clamp(1, 999);
+    final next = value.clamp(1, _maxAllowedQuantity);
     if (_quantity == next) return;
     _quantity = next;
     notifyListeners();
   }
 
   Future<void> incrementQuantity() async {
+    if (_quantity >= _maxAllowedQuantity) return;
     setQuantity(_quantity + 1);
     if (isInCart) {
       await _cartRepository.setQuantity(product.id, _quantity);
@@ -461,18 +512,21 @@ class ProductDetailsViewModel extends BaseViewModel {
         imageUrl: primaryImageUrl,
         unitPrice: displayPrice,
         quantity: _quantity,
+        maxQuantity: _maxAllowedQuantity,
       ),
     );
   }
 
   Future<void> addProductToCart(ProductModel p, {int quantity = 1}) async {
+    final int maxQty = (p.stockLeft != null && p.stockLeft! > 0) ? p.stockLeft! : 999;
     await CartCoordinator.instance.addItem(
       CartItemModel(
         productId: p.id,
         name: p.name,
         imageUrl: p.imageUrl,
         unitPrice: p.price,
-        quantity: quantity.clamp(1, 999),
+        quantity: quantity.clamp(1, maxQty),
+        maxQuantity: maxQty,
       ),
     );
   }
@@ -500,6 +554,7 @@ class ProductDetailsViewModel extends BaseViewModel {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _cartSub?.cancel();
     _wishlistSub?.cancel();
     super.dispose();

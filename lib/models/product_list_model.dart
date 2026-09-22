@@ -14,9 +14,15 @@ class ProductList {
         for (var v in rawData) {
           data!.add(Data.fromJson(v));
         }
-      } else if (rawData is Map && rawData['products'] is List) {
-        for (var v in rawData['products']) {
-          data!.add(Data.fromJson(v));
+      } else if (rawData is Map) {
+        if (rawData['products'] is List) {
+          for (var v in rawData['products']) {
+            data!.add(Data.fromJson(v));
+          }
+        } else if (rawData['related'] is List) {
+          for (var v in rawData['related']) {
+            data!.add(Data.fromJson(v));
+          }
         }
       }
     }

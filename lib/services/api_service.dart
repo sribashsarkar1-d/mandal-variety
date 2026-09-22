@@ -37,7 +37,8 @@ class ApiService {
   final http.Client _client;
 
   static const String _baseUrl = 'https://api.mandal-variety.com';
-  static const Duration _timeout = Duration(seconds: 60);
+  static const Duration _timeout = Duration(seconds: 15);
+  static const int _maxRetries = 2;
   static const bool _useBearerAuth = true;
 
   Future<void> saveAuthToken(String token) async {
@@ -1141,56 +1142,67 @@ class ApiService {
       '$_baseUrl/$path',
     ).replace(queryParameters: queryParameters);
 
-    try {
-      final response = await _client
-          .get(uri, headers: await _getHeaders(withAuth: withAuth))
-          .timeout(_timeout);
+    for (int attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final response = await _client
+            .get(uri, headers: await _getHeaders(withAuth: withAuth))
+            .timeout(_timeout);
 
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        await _handleUnauthorized();
-      }
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          await _handleUnauthorized();
+        }
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        final serverMessage = _extractServerErrorMessage(response.body);
-        final serverDebug = _extractServerDebug(response.body);
-        throw ApiServiceException(
-          serverMessage ??
-              'Server error (${response.statusCode}). Please try again.',
-          statusCode: response.statusCode,
-          rawResponseBody: response.body,
-          debugData: serverDebug,
-        );
-      }
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final serverMessage = _extractServerErrorMessage(response.body);
+          final serverDebug = _extractServerDebug(response.body);
+          throw ApiServiceException(
+            serverMessage ??
+                'Server error (${response.statusCode}). Please try again.',
+            statusCode: response.statusCode,
+            rawResponseBody: response.body,
+            debugData: serverDebug,
+          );
+        }
 
-      if (response.body.trim().isEmpty) {
-        throw const ApiServiceException('Server returned empty response.');
-      }
+        if (response.body.trim().isEmpty) {
+          throw const ApiServiceException('Server returned empty response.');
+        }
 
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
-        throw const ApiServiceException('Invalid response format from server.');
-      }
+        final decoded = jsonDecode(response.body);
+        if (decoded is! Map<String, dynamic>) {
+          throw const ApiServiceException('Invalid response format from server.');
+        }
 
-      return decoded;
-    } on TimeoutException {
-      throw const ApiServiceException('Request timed out. Please retry.');
-    } on http.ClientException catch (e) {
-      final details = e.message.toLowerCase();
-      if (details.contains('failed host lookup')) {
-        throw const ApiServiceException(
-          'DNS lookup failed for api.mandal-variety.com. Check internet, DNS, and base URL host.',
-        );
+        return decoded;
+      } on TimeoutException {
+        if (attempt == _maxRetries) {
+          throw const ApiServiceException('Request timed out. Please check your WiFi/network and retry.');
+        }
+      } on http.ClientException catch (e) {
+        if (attempt == _maxRetries) {
+          final details = e.message.toLowerCase();
+          if (details.contains('failed host lookup')) {
+            throw const ApiServiceException(
+              'DNS lookup failed for api.mandal-variety.com. Check internet, DNS, and base URL host.',
+            );
+          }
+          throw const ApiServiceException(
+            'No internet connection. Please check network and retry.',
+          );
+        }
+      } on FormatException {
+        throw const ApiServiceException('Invalid JSON received from server.');
+      } on ApiServiceException {
+        rethrow;
+      } catch (_) {
+        if (attempt == _maxRetries) {
+          throw const ApiServiceException('Unexpected error. Please try again.');
+        }
       }
-      throw const ApiServiceException(
-        'No internet connection. Please check network and retry.',
-      );
-    } on FormatException {
-      throw const ApiServiceException('Invalid JSON received from server.');
-    } on ApiServiceException {
-      rethrow;
-    } catch (_) {
-      throw const ApiServiceException('Unexpected error. Please try again.');
+      
+      await Future<void>.delayed(Duration(milliseconds: 500 * (attempt + 1)));
     }
+    throw const ApiServiceException('Unexpected error. Please try again.');
   }
 
   Future<Map<String, dynamic>> _post(
@@ -1203,60 +1215,72 @@ class ApiService {
       '$_baseUrl/$path',
     ).replace(queryParameters: queryParameters);
 
-    try {
-      final response = await _client
-          .post(
-            uri,
-            headers: await _getHeaders(withAuth: withAuth),
-            body: jsonEncode(body ?? <String, dynamic>{}),
-          )
-          .timeout(_timeout);
+    for (int attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final response = await _client
+            .post(
+              uri,
+              headers: await _getHeaders(withAuth: withAuth),
+              body: jsonEncode(body ?? <String, dynamic>{}),
+            )
+            .timeout(_timeout);
 
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        await _handleUnauthorized();
-      }
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          await _handleUnauthorized();
+        }
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        final serverMessage = _extractServerErrorMessage(response.body);
-        final serverDebug = _extractServerDebug(response.body);
-        throw ApiServiceException(
-          serverMessage ??
-              'Server error (${response.statusCode}). Please try again.',
-          statusCode: response.statusCode,
-          rawResponseBody: response.body,
-          debugData: serverDebug,
-        );
-      }
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final serverMessage = _extractServerErrorMessage(response.body);
+          final serverDebug = _extractServerDebug(response.body);
+          throw ApiServiceException(
+            serverMessage ??
+                'Server error (${response.statusCode}). Please try again.',
+            statusCode: response.statusCode,
+            rawResponseBody: response.body,
+            debugData: serverDebug,
+          );
+        }
 
-      if (response.body.trim().isEmpty) {
-        throw const ApiServiceException('Server returned empty response.');
-      }
+        if (response.body.trim().isEmpty) {
+          throw const ApiServiceException('Server returned empty response.');
+        }
 
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
-        throw const ApiServiceException('Invalid response format from server.');
-      }
+        final decoded = jsonDecode(response.body);
+        if (decoded is! Map<String, dynamic>) {
+          throw const ApiServiceException('Invalid response format from server.');
+        }
 
-      return decoded;
-    } on TimeoutException {
-      throw const ApiServiceException('Request timed out. Please retry.');
-    } on http.ClientException catch (e) {
-      final details = e.message.toLowerCase();
-      if (details.contains('failed host lookup')) {
-        throw const ApiServiceException(
-          'DNS lookup failed for api.mandal-variety.com. Check internet, DNS, and base URL host.',
-        );
+        return decoded;
+      } on TimeoutException {
+        if (attempt == _maxRetries) {
+          throw const ApiServiceException('Request timed out. Please check your WiFi/network and retry.');
+        }
+      } on http.ClientException catch (e) {
+        if (attempt == _maxRetries) {
+          final details = e.message.toLowerCase();
+          if (details.contains('failed host lookup')) {
+            throw const ApiServiceException(
+              'DNS lookup failed for api.mandal-variety.com. Check internet, DNS, and base URL host.',
+            );
+          }
+          throw const ApiServiceException(
+            'No internet connection. Please check network and retry.',
+          );
+        }
+      } on FormatException {
+        throw const ApiServiceException('Invalid JSON received from server.');
+      } on ApiServiceException {
+        rethrow;
+      } catch (_) {
+        if (attempt == _maxRetries) {
+          throw const ApiServiceException('Unexpected error. Please try again.');
+        }
       }
-      throw const ApiServiceException(
-        'No internet connection. Please check network and retry.',
-      );
-    } on FormatException {
-      throw const ApiServiceException('Invalid JSON received from server.');
-    } on ApiServiceException {
-      rethrow;
-    } catch (_) {
-      throw const ApiServiceException('Unexpected error. Please try again.');
+      
+      // Delay before retrying
+      await Future<void>.delayed(Duration(milliseconds: 500 * (attempt + 1)));
     }
+    throw const ApiServiceException('Unexpected error. Please try again.');
   }
 
   Future<Map<String, dynamic>> _postForm(
@@ -1504,6 +1528,7 @@ class ApiService {
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
     };
 
     if (!withAuth) {

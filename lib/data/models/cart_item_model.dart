@@ -10,12 +10,14 @@ class CartItemModel {
   final String? imageUrl;
   final double unitPrice;
   final int quantity;
+  final int? maxQuantity;
 
   const CartItemModel({
     required this.productId,
     required this.name,
     required this.unitPrice,
     required this.quantity,
+    this.maxQuantity,
     this.imageUrl,
   });
 
@@ -25,6 +27,7 @@ class CartItemModel {
     String? imageUrl,
     double? unitPrice,
     int? quantity,
+    int? maxQuantity,
   }) {
     return CartItemModel(
       productId: productId ?? this.productId,
@@ -32,6 +35,7 @@ class CartItemModel {
       imageUrl: imageUrl ?? this.imageUrl,
       unitPrice: unitPrice ?? this.unitPrice,
       quantity: quantity ?? this.quantity,
+      maxQuantity: maxQuantity ?? this.maxQuantity,
     );
   }
 
@@ -42,12 +46,14 @@ class CartItemModel {
       'imageUrl': imageUrl,
       'unitPrice': unitPrice,
       'quantity': quantity,
+      'maxQuantity': maxQuantity,
     };
   }
 
   static CartItemModel fromJson(Map<String, dynamic> json) {
     final rawPrice = json['unitPrice'];
     final rawQty = json['quantity'];
+    final rawMax = json['maxQuantity'];
 
     return CartItemModel(
       productId: (json['productId'] ?? '').toString(),
@@ -59,6 +65,9 @@ class CartItemModel {
       quantity: rawQty is int
           ? rawQty
           : int.tryParse(rawQty?.toString() ?? '') ?? 1,
+      maxQuantity: rawMax is int
+          ? rawMax
+          : int.tryParse(rawMax?.toString() ?? ''),
     );
   }
 

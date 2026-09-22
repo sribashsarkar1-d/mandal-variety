@@ -127,7 +127,7 @@ class Data {
     createdAt = _asString(json['created_at'] ?? json['createdAt']);
     updatedAt = _asString(json['updated_at'] ?? json['updatedAt']);
     stock = _asInt(json['stock']);
-    attributes = _asString(json['attributes']);
+    attributes = _asAttributesString(json['attributes']);
     categoryName = _asString(json['category_name'] ?? json['categoryName']);
     shortDescription = _asString(
       json['short_description'] ?? json['shortDescription'],
@@ -281,5 +281,12 @@ class Data {
     final text = _asString(value);
     if (text == null) return null;
     return DateTime.tryParse(text);
+  }
+
+  static String? _asAttributesString(Object? value) {
+    if (value is Map) {
+      return value.entries.map((e) => '${e.key}: ${e.value}').join(', ');
+    }
+    return _asString(value);
   }
 }

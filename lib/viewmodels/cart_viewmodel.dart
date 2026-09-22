@@ -70,6 +70,7 @@ class CartViewModel extends BaseViewModel {
   Future<void> increment(String productId) async {
     final item = _find(productId);
     if (item == null) return;
+    if (item.maxQuantity != null && item.quantity >= item.maxQuantity!) return;
     await CartCoordinator.instance.setQuantity(productId, item.quantity + 1);
   }
 

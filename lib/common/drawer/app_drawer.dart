@@ -546,12 +546,19 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     final leadingWidget = imageUrl.isNotEmpty
         ? ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              imageUrl,
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
               width: 28,
               height: 28,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _CategoryLeadingIcon(
+              placeholder: (context, url) => Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              errorWidget: (context, url, error) => _CategoryLeadingIcon(
                 icon: _iconFromCategoryName(categoryName),
               ),
             ),

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../common/snackbars/app_snackbar.dart';
 import '../core/auth/auth_guard.dart';
 import '../core/cart/cart_coordinator.dart';
@@ -207,24 +209,13 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                         ),
                         child: widget.imageUrl.isEmpty
                             ? _fallbackImage(context)
-                            : Image.network(
-                                widget.imageUrl,
+                            : CachedNetworkImage(
+                                imageUrl: widget.imageUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _fallbackImage(context),
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    color: theme.colorScheme.surfaceContainerHighest,
-                                    child: const Center(
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                placeholder: (context, url) => Container(
+                                  color: isDark ? Colors.grey[800] : Colors.grey[200],
+                                ),
+                                errorWidget: (context, url, error) => _fallbackImage(context),
                               ),
                       ),
                     ),

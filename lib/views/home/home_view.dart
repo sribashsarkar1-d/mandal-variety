@@ -140,21 +140,47 @@ class _HomeViewState extends State<HomeView> {
 
     // 2. Fetch fresh data in the background
     try {
-      final results = await Future.wait<dynamic>([
-        _apiService.getCategoryHierarchy().catchError((_) => CategoryHierarchyModel(success: true, data: [])),
-        _apiService.getBanners().catchError((_) => BannersModel(success: true, data: [])),
-        _apiService.getProducts().catchError((_) => ProductList(success: true, data: [])),
+      final hierarchyFuture = _apiService.getCategoryHierarchy()
+          .then<CategoryHierarchyModel?>((v) => v)
+          .catchError((_) => null);
+      
+      final bannersFuture = _apiService.getBanners()
+          .then<BannersModel?>((v) => v)
+          .catchError((_) => null);
+
+      final productsFuture = _apiService.getProducts()
+          .then<ProductList?>((v) => v)
+          .catchError((_) => null);
+
+      final results = await Future.wait([
+        hierarchyFuture,
+        bannersFuture,
+        productsFuture,
       ]);
 
-      final hierarchy = results[0] as CategoryHierarchyModel;
-      final banners = results[1] as BannersModel;
-      final products = results[2] as ProductList;
+      final hierarchy = results[0] as CategoryHierarchyModel?;
+      final banners = results[1] as BannersModel?;
+      final products = results[2] as ProductList?;
 
-      await cacheService.cacheJson('home_hierarchy', hierarchy.toJson());
-      await cacheService.cacheJson('home_banners', banners.toJson());
-      await cacheService.cacheJson('home_products', products.toJson());
+      if (hierarchy == null && banners == null && products == null) {
+        throw Exception('Failed to load any home data');
+      }
 
-      _updatePayload(hierarchy, banners, products);
+      final finalHierarchy = hierarchy ?? (_cachedPayload != null ? CategoryHierarchyModel(data: _cachedPayload!.parents) : CategoryHierarchyModel());
+      final finalBanners = banners ?? (_cachedPayload != null ? BannersModel(data: _cachedPayload!.banners) : BannersModel());
+      final finalProducts = products ?? (_cachedPayload != null ? ProductList(data: _cachedPayload!.products) : ProductList());
+
+      if (hierarchy?.data?.isNotEmpty == true) {
+        await cacheService.cacheJson('home_hierarchy', hierarchy!.toJson());
+      }
+      if (banners?.data?.isNotEmpty == true) {
+        await cacheService.cacheJson('home_banners', banners!.toJson());
+      }
+      if (products?.data?.isNotEmpty == true) {
+        await cacheService.cacheJson('home_products', products!.toJson());
+      }
+
+      _updatePayload(finalHierarchy, finalBanners, finalProducts);
 
       if (mounted) {
         setState(() {
@@ -519,10 +545,13 @@ class _HomeViewState extends State<HomeView> {
             child: imageUrl != null && imageUrl.isNotEmpty
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(fallbackIcon, color: theme.colorScheme.primary),
+                      placeholder: (context, url) => Container(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (context, url, error) => Icon(fallbackIcon, color: theme.colorScheme.primary),
                     ),
                   )
                 : Icon(fallbackIcon, color: theme.colorScheme.primary),
@@ -571,10 +600,13 @@ class _HomeViewState extends State<HomeView> {
                 fit: StackFit.expand,
                 children: [
                   if (imageUrl.isNotEmpty)
-                    Image.network(
-                      imageUrl,
+                    CachedNetworkImage(
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, size: 40)),
+                      placeholder: (context, url) => Container(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image, size: 40)),
                     ),
                   // If we wanted to draw text over the image, we could do it here.
                   // But usually banners have text baked in.
@@ -753,10 +785,13 @@ class _HomeViewState extends State<HomeView> {
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: imageUrl.isNotEmpty
-                                  ? Image.network(
-                                      imageUrl,
+                                  ? CachedNetworkImage(
+                                      imageUrl: imageUrl,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(Icons.category, color: Colors.grey),
+                                      placeholder: (context, url) => Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                      ),
+                                      errorWidget: (context, url, error) => const Icon(Icons.category, color: Colors.grey),
                                     )
                                   : const Icon(Icons.category, color: Colors.grey),
                             ),

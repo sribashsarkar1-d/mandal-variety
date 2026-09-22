@@ -49,17 +49,23 @@ class _SplashScreenState extends State<SplashScreen>
 
     try {
       final hierarchy = await apiService.getCategoryHierarchy();
-      await cacheService.cacheJson('home_hierarchy', hierarchy.toJson());
+      if (hierarchy.data?.isNotEmpty == true) {
+        await cacheService.cacheJson('home_hierarchy', hierarchy.toJson());
+      }
     } catch (_) {}
 
     try {
       final banners = await apiService.getBanners();
-      await cacheService.cacheJson('home_banners', banners.toJson());
+      if (banners.data?.isNotEmpty == true) {
+        await cacheService.cacheJson('home_banners', banners.toJson());
+      }
     } catch (_) {}
 
     try {
       final products = await apiService.getProducts();
-      await cacheService.cacheJson('home_products', products.toJson());
+      if (products.data?.isNotEmpty == true) {
+        await cacheService.cacheJson('home_products', products.toJson());
+      }
     } catch (_) {}
   }
 

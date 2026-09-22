@@ -13,5 +13,6 @@ bool isNetworkError(Object? error) {
   return msg.contains('socketexception') ||
       msg.contains('failed host lookup') ||
       msg.contains('connection refused') ||
-      msg.contains('network is unreachable');
+      msg.contains('network is unreachable') ||
+      msg.contains('no internet connection');
 }

@@ -548,6 +548,7 @@ class _HomeViewState extends State<HomeView> {
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
+                      memCacheWidth: 200,
                       placeholder: (context, url) => Container(
                         color: theme.colorScheme.surfaceContainerHighest,
                       ),
@@ -603,6 +604,7 @@ class _HomeViewState extends State<HomeView> {
                     CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
+                      memCacheWidth: 600,
                       placeholder: (context, url) => Container(
                         color: theme.colorScheme.surfaceContainerHighest,
                       ),
@@ -788,6 +790,7 @@ class _HomeViewState extends State<HomeView> {
                                   ? CachedNetworkImage(
                                       imageUrl: imageUrl,
                                       fit: BoxFit.cover,
+                                      memCacheWidth: 150,
                                       placeholder: (context, url) => Container(
                                         color: theme.colorScheme.surfaceContainerHighest,
                                       ),
@@ -819,6 +822,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildTopPicks(List<Data> products, ThemeData theme) {
+    final displayProducts = products.take(12).toList();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -829,7 +833,7 @@ class _HomeViewState extends State<HomeView> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               image: DecorationImage(
-                image: const CachedNetworkImageProvider('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2000&auto=format&fit=crop'),
+                image: const CachedNetworkImageProvider('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=1000&auto=format&fit=crop'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withValues(alpha: 0.5),
@@ -880,7 +884,7 @@ class _HomeViewState extends State<HomeView> {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: products.length,
+            itemCount: displayProducts.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 12,
@@ -888,7 +892,7 @@ class _HomeViewState extends State<HomeView> {
               childAspectRatio: 0.65,
             ),
             itemBuilder: (context, index) {
-              final product = products[index];
+              final product = displayProducts[index];
               final image = _apiService.resolveImageUrl((product.images != null && product.images!.isNotEmpty) ? product.images!.first : null);
               final price = product.discountPrice != null && product.discountPrice! > 0
                   ? 'Rs ${product.discountPrice}'

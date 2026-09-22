@@ -11,6 +11,8 @@ class AppCachedImage extends StatelessWidget {
   final Widget? placeholder;
   final Widget? errorWidget;
   final String fallbackAsset;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
 
   const AppCachedImage({
     super.key,
@@ -22,6 +24,8 @@ class AppCachedImage extends StatelessWidget {
     this.placeholder,
     this.errorWidget,
     this.fallbackAsset = 'assets/logo/mandal_logo.png',
+    this.memCacheWidth,
+    this.memCacheHeight,
   });
 
   bool _isHttpUrl(String url) =>
@@ -51,6 +55,8 @@ class AppCachedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      memCacheWidth: memCacheWidth ?? (width != null ? (width! * 2.5).toInt() : 400),
+      memCacheHeight: memCacheHeight ?? (height != null ? (height! * 2.5).toInt() : null),
       placeholder: (context, url) =>
           placeholder ??
           Container(

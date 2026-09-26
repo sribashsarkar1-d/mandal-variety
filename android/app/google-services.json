@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "291030158934",
+    "project_id": "mandal-variety",
+    "storage_bucket": "mandal-variety.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:291030158934:android:21630ed2ced3d792e035f7",
+        "android_client_info": {
+          "package_name": "com.example.mandal_variety"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCAReScp5EZJ2ZY2KvR-DJS6_98FRF89I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

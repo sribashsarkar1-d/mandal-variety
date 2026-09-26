@@ -178,13 +178,13 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -192,28 +192,35 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
         color: Colors.transparent,
         child: InkWell(
           onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image and Badges
               Expanded(
+                flex: 5, // Give more priority to the image
                 child: Stack(
                   children: [
-                    SizedBox(
+                    Container(
                       width: double.infinity,
                       height: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[900] : Colors.white,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                      ),
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
+                          top: Radius.circular(12),
                         ),
                         child: widget.imageUrl.isEmpty
                             ? _fallbackImage(context)
                             : CachedNetworkImage(
                                 imageUrl: widget.imageUrl,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain, // Show full image without cropping
                                 placeholder: (context, url) => Container(
-                                  color: isDark ? Colors.grey[800] : Colors.grey[200],
+                                  color: isDark ? Colors.grey[800] : Colors.grey[100],
                                 ),
                                 errorWidget: (context, url, error) => _fallbackImage(context),
                               ),
@@ -225,11 +232,11 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                         top: 0,
                         left: 0,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: getBadgeColor(widget.discountBadgeText),
                             borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(16),
+                              topLeft: Radius.circular(12),
                               bottomRight: Radius.circular(12),
                             ),
                           ),
@@ -237,7 +244,7 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                             widget.discountBadgeText!,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -248,8 +255,8 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                       top: 8,
                       right: 8,
                       child: Container(
-                        width: 30,
-                        height: 30,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
                           color: isDark ? theme.colorScheme.surface : Colors.white,
                           shape: BoxShape.circle,
@@ -263,7 +270,7 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                         ),
                         child: _isWishlistActionLoading
                             ? const Padding(
-                                padding: EdgeInsets.all(8.0),
+                                padding: EdgeInsets.all(6.0),
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : IconButton(
@@ -271,161 +278,174 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                                 icon: Icon(
                                   _isWishlisted ? Icons.favorite : Icons.favorite_border,
                                   color: _isWishlisted ? const Color(0xFFFF3366) : Colors.grey,
-                                  size: 18,
+                                  size: 16,
                                 ),
                                 onPressed: _toggleWishlist,
                               ),
                       ),
                     ),
+                    // Rating overlay on image
+                    if (widget.rating != null && widget.rating! > 0)
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.black.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star, size: 12, color: Colors.amber),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.rating!.toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              if (widget.reviewCount != null && widget.reviewCount! > 0) ...[
+                                const SizedBox(width: 2),
+                                Text(
+                                  '(${widget.reviewCount})',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
               
               // Content Area
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Product Name
-                    Text(
-                      widget.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    
-                    // Rating
-                    if (widget.rating != null && widget.rating! > 0) ...[
-                      Row(
+              Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.star, size: 14, color: Colors.amber),
-                          const SizedBox(width: 4),
+                          // Product Name
                           Text(
-                            widget.rating!.toStringAsFixed(1),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                            widget.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                              height: 1.2,
                             ),
                           ),
-                          if (widget.reviewCount != null && widget.reviewCount! > 0) ...[
-                            const SizedBox(width: 4),
-                            Text(
-                              '(${widget.reviewCount})',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontSize: 12,
+                          const SizedBox(height: 4),
+                          
+                          // Price Row
+                          Row(
+                            children: [
+                              Text(
+                                widget.priceText,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF008B4C), // Green color matching screenshot
+                                  fontSize: 15,
+                                ),
                               ),
+                              const SizedBox(width: 6),
+                              if (widget.oldPriceText != null && widget.oldPriceText!.isNotEmpty)
+                                Text(
+                                  widget.oldPriceText!,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+
+                          // Category Pill with Leaf Icon
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey[800] : const Color(0xFFF1F8E9), // Light greenish-grey
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.eco, size: 12, color: Color(0xFF388E3C)),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    widget.categoryName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white70 : const Color(0xFF424242),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                    ],
-                    
-                    // Price
-                    Row(
-                      children: [
-                        Text(
-                          widget.priceText,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF1B5E20), // Dark Green
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (widget.oldPriceText != null && widget.oldPriceText!.isNotEmpty)
-                          Text(
-                            widget.oldPriceText!,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              decoration: TextDecoration.lineThrough,
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 12,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Category Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9), // Light Green bg
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        widget.categoryName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF546E7A), // Blue-grey text
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Actions Row
-                    Row(
-                      children: [
-                        // Small Cart Add Button
-                        InkWell(
-                          onTap: _isCartActionLoading ? null : _handleAddToCart,
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFF388E3C), width: 1.5),
+                      
+                      // Full-width Add to Cart Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 36,
+                        child: ElevatedButton.icon(
+                          onPressed: _isCartActionLoading ? null : _handleAddToCart,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF008B4C),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
-                              Icons.add_shopping_cart,
-                              color: Color(0xFF388E3C),
-                              size: 20,
+                            elevation: 0,
+                          ),
+                          icon: _isCartActionLoading
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.shopping_cart_outlined, size: 16),
+                          label: const Text(
+                            'Add to Cart',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        // Main Add to Cart Button
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isCartActionLoading ? null : _handleAddToCart,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF388E3C),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            icon: _isCartActionLoading
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.shopping_cart_outlined, size: 18),
-                            label: const Text(
-                              'Add to Cart',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

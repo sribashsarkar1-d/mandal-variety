@@ -282,7 +282,6 @@ class _WishlistViewState extends State<WishlistView>
               'drinks...',
               'dairy...',
             ],
-            onSearchChanged: (val) => debugPrint('Searching: $val'),
             currentBottomBarIndex: 1,
           ),
 

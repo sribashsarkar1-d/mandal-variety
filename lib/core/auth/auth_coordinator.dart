@@ -1,4 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import '../../services/api_service.dart';
 
 // ============================================================================
 // AUTH COORDINATOR  — Singleton
@@ -106,6 +109,16 @@ class AuthCoordinator {
     }
     if (email != null) {
       await _box?.put(_keyUserEmail, email);
+    }
+
+    // Refresh FCM Token for the newly logged-in user
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ApiService().updateFcmToken(token);
+      }
+    } catch (e) {
+      debugPrint('Failed to update FCM token on login: $e');
     }
   }
 

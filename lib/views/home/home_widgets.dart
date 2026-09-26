@@ -404,76 +404,148 @@ class _EcommerceProductCardState extends State<EcommerceProductCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image and Tags Stack
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 1.12,
-                    child: Image(
-                      image: _resolveImageProvider(widget.imageUrl),
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stack) => Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          color: Colors.grey,
+            Expanded(
+              flex: 5,
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[900] : Colors.white,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child: Image(
+                        image: _resolveImageProvider(widget.imageUrl),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stack) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                if (widget.discountTag != null)
+                  if (widget.discountTag != null)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          widget.discountTag!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Favourite icon top right
                   Positioned(
                     top: 8,
-                    left: 8,
+                    right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(8),
+                        color: isDark ? theme.colorScheme.surface : Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        widget.discountTag!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                      child: IconButton(
+                        icon: Icon(
+                          _isFavorite ? Icons.favorite : Icons.favorite_border,
+                          size: 16,
+                        ),
+                        color: _isFavorite ? errorColor : Colors.grey,
+                        onPressed: _toggleFavorite,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                  // Rating overlay on image
+                  if (widget.rating != null && widget.rating! > 0)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.black.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, size: 12, color: Colors.amber),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.rating.toString(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            if (widget.reviewCount != null && widget.reviewCount! > 0) ...[
+                              const SizedBox(width: 2),
+                              Text(
+                                '(${widget.reviewCount})',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                // Favourite icon placeholder top right
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: IconButton(
-                    icon: Icon(
-                      _isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 20,
-                    ),
-                    color: _isFavorite ? errorColor : Colors.grey[400],
-                    onPressed: _toggleFavorite,
-                    constraints: const BoxConstraints(),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             Expanded(
+              flex: 4,
               child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final bool isTight = constraints.maxHeight < 104;
-                    final double titleRatingGap = isTight ? 2 : 4;
-
-                    return Column(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -481,93 +553,73 @@ class _EcommerceProductCardState extends State<EcommerceProductCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1.05,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                            height: 1.2,
                           ),
                         ),
-                        SizedBox(height: titleRatingGap),
-                        if (widget.rating != null && !isTight)
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                widget.rating.toString(),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              if (widget.reviewCount != null)
-                                Text(
-                                  ' (${widget.reviewCount})',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.disabledColor,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        const Spacer(),
+                        const SizedBox(height: 4),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${AppCurrency.symbol}${widget.price.toStringAsFixed(2)}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.primaryColor,
-                                      height: 1.05,
-                                    ),
-                                  ),
-                                  if (hasDiscount && !isTight)
-                                    Text(
-                                      '${AppCurrency.symbol}${widget.originalPrice!.toStringAsFixed(2)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.caption.copyWith(
-                                        decoration: TextDecoration.lineThrough,
-                                        color: theme.disabledColor,
-                                      ),
-                                    ),
-                                ],
+                            Text(
+                              '${AppCurrency.symbol}${widget.price.toStringAsFixed(2)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF008B4C),
+                                fontSize: 15,
                               ),
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: theme.primaryColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(10),
-                                onTap: _handleAddToCart,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Icon(
-                                    _inCart
-                                        ? Icons.shopping_cart
-                                        : Icons.shopping_cart_outlined,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
+                            const SizedBox(width: 6),
+                            if (hasDiscount)
+                              Text(
+                                '${AppCurrency.symbol}${widget.originalPrice!.toStringAsFixed(2)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.caption.copyWith(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: 11,
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ],
-                    );
-                  },
+                    ),
+                    
+                    // Full-width Add to Cart Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 32,
+                      child: ElevatedButton.icon(
+                        onPressed: _handleAddToCart,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF008B4C),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon: Icon(
+                          _inCart
+                              ? Icons.check
+                              : Icons.shopping_cart_outlined,
+                          size: 16,
+                        ),
+                        label: Text(
+                          _inCart ? 'Added' : 'Add to Cart',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

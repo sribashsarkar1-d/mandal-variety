@@ -54,6 +54,18 @@ class ApiService {
     await AuthCoordinator.instance.clearToken();
   }
 
+  Future<Map<String, dynamic>> updateFcmToken(String fcmToken) async {
+    final userId = AuthCoordinator.instance.currentUserId;
+    final jsonMap = await _post(
+      'users/update_fcm_token.php',
+      body: <String, dynamic>{
+        if (userId != null) 'user_id': userId,
+        'fcm_token': fcmToken,
+      },
+    );
+    return jsonMap as Map<String, dynamic>;
+  }
+
   Future<Map<String, String>> getAuthHeaders() async {
     return _getHeaders(withAuth: true);
   }

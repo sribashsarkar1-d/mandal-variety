@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../common/appbar/common_app_bar.dart';
+import '../../common/appbar/primary_sliver_app_bar.dart';
 import '../../common/buttons/app_button.dart';
 import '../../common/bottombar/common_bottom_bar.dart';
 import '../../common/cards/app_card.dart';
@@ -354,7 +354,6 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
       animation: _vm,
       builder: (context, _) {
         return Scaffold(
-          appBar: CommonAppBar(title: 'Cart'),
           bottomNavigationBar: CommonBottomBar(
             currentIndex: widget.currentBottomBarIndex,
             onTap: (index) {
@@ -410,12 +409,25 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                           ),
                         )
                 : _vm.isEmpty
-                ? ListView(
+                ? CustomScrollView(
                     physics: const BouncingScrollPhysics(
                       decelerationRate: ScrollDecelerationRate.fast,
                     ),
-                    children: [
-                      _EmptyCartState(
+                    slivers: [
+                      PrimarySliverAppBar(
+                        searchHintText: 'Search groceries, beauty...',
+                        searchStaticPrefix: 'Search ',
+                        searchAnimatedHints: const [
+                          'groceries...',
+                          'beauty products...',
+                          'shoes...',
+                          'fresh items...',
+                        ],
+                        currentBottomBarIndex: widget.currentBottomBarIndex,
+                      ),
+                      SliverList(
+                        delegate: SliverChildListDelegate([
+                          _EmptyCartState(
                         floatAnimation: _floatAnimation,
                         onStartShopping: () {
                           Navigator.pushAndRemoveUntil(
@@ -501,8 +513,10 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                         ),
                       ],
                       const SizedBox(height: 24),
-                    ],
-                  )
+                    ]),
+                  ),
+                ],
+              )
                 : StreamBuilder<List<WishlistItemModel>>(
                     stream: WishlistCoordinator.instance.watchItems(),
                     builder: (context, snapshot) {
@@ -523,6 +537,17 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                           decelerationRate: ScrollDecelerationRate.fast,
                         ),
                         slivers: [
+                          PrimarySliverAppBar(
+                            searchHintText: 'Search groceries, beauty...',
+                            searchStaticPrefix: 'Search ',
+                            searchAnimatedHints: const [
+                              'groceries...',
+                              'beauty products...',
+                              'shoes...',
+                              'fresh items...',
+                            ],
+                            currentBottomBarIndex: widget.currentBottomBarIndex,
+                          ),
                           SliverPadding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                             sliver: SliverList(

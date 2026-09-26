@@ -116,7 +116,6 @@ class _OrdersViewState extends State<OrdersView> with TickerProviderStateMixin {
                   'delivered orders...',
                   'cancelled orders...',
                 ],
-                onSearchChanged: (val) => debugPrint('Searching orders: $val'),
                 currentBottomBarIndex: 2,
                 enableTobaccoRedirect: false,
               ),

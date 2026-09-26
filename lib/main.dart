@@ -12,12 +12,16 @@ import 'core/location/address_location_coordinator.dart';
 import 'core/permissions/app_permission_coordinator.dart';
 import 'core/wishlist/wishlist_coordinator.dart';
 import 'services/session_service.dart';
+import 'services/notification_service.dart';
 import 'views/splash/splash_view.dart';
+
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await SessionService.instance.loadSessionOnAppStart();
+  await NotificationService.instance.init();
   await CartCoordinator.instance.init();
   await WishlistCoordinator.instance.init();
   await AddressLocationCoordinator.instance.init();
@@ -85,6 +89,7 @@ class _EnchantedForestAppState extends State<EnchantedForestApp>
     MediaQueryHelper.init(context);
 
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       locale: DevicePreview.locale(context),
       builder: (context, child) {
         final devicePreviewChild = DevicePreview.appBuilder(context, child);

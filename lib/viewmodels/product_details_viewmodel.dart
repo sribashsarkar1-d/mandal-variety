@@ -147,6 +147,16 @@ class ProductDetailsViewModel extends BaseViewModel {
       productDeliveryCharge != null ||
       productFreeDelivery != null;
 
+  bool get isOutOfStock =>
+      (displayStockLeft != null && displayStockLeft! <= 0) ||
+      (productInStock == false);
+
+  bool get isLowStock =>
+      !isOutOfStock &&
+      displayStockLeft != null &&
+      displayStockLeft! > 0 &&
+      displayStockLeft! <= 5;
+
   String? get displayDiscountTag {
     if (displayOriginalPrice != null && displayOriginalPrice! > displayPrice) {
       final off =
@@ -408,7 +418,7 @@ class ProductDetailsViewModel extends BaseViewModel {
       rating: item.averageRating,
       reviewCount: item.reviewCount,
       reviews: const [],
-      stockLeft: null,
+      stockLeft: item.stockQuantity ?? item.stock,
       isFastDelivery: null,
       isBestSeller: null,
       categoryName: item.categoryName,
@@ -505,6 +515,50 @@ class ProductDetailsViewModel extends BaseViewModel {
   }
 
   Future<CartActionResult> addToCart() async {
+    // 1. Revalidate stock against backend before adding to cart
+    final productId = int.tryParse(product.id);
+    if (productId != null) {
+      try {
+        final detail = await _apiService.getProductDetails(productId);
+        final detailData = detail.data;
+        if (detailData != null) {
+          final freshStock = detailData.stockQuantity ?? detailData.stock;
+          final freshInStock = detailData.isInStock;
+          if (freshStock != null) {
+            _apiStockLeft = freshStock;
+          }
+          if (freshInStock != null) {
+            _apiInStock = freshInStock;
+          }
+          notifyListeners();
+
+          if (isOutOfStock) {
+            return const CartActionResult(
+              success: false,
+              message: 'Sorry, this product is currently out of stock.',
+            );
+          }
+
+          if (displayStockLeft != null && _quantity > displayStockLeft!) {
+            setQuantity(displayStockLeft!);
+            return CartActionResult(
+              success: false,
+              message: 'Only $displayStockLeft left in stock. Quantity updated.',
+            );
+          }
+        }
+      } catch (_) {
+        // Fallback to local stock validation if network precheck is unavailable
+      }
+    }
+
+    if (isOutOfStock) {
+      return const CartActionResult(
+        success: false,
+        message: 'This product is currently out of stock.',
+      );
+    }
+
     return CartCoordinator.instance.addItem(
       CartItemModel(
         productId: product.id,
@@ -512,7 +566,9 @@ class ProductDetailsViewModel extends BaseViewModel {
         imageUrl: primaryImageUrl,
         unitPrice: displayPrice,
         quantity: _quantity,
-        maxQuantity: _maxAllowedQuantity,
+        maxQuantity: displayStockLeft ?? _maxAllowedQuantity,
+        availableStock: displayStockLeft,
+        isInStock: !isOutOfStock,
       ),
     );
   }

@@ -12,7 +12,7 @@ import '../../models/product_list_model.dart';
 import '../../services/api_service.dart';
 import '../../services/api_cache_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../common/cards/product_grid_card.dart';
+import '../../core/responsive/responsive_product_grid_config.dart';
 import '../../widgets/product_card_widget.dart';
 import '../../common/searchbar/app_search_bar.dart';
 import '../../common/buttons/cart_icon_button.dart';
@@ -459,7 +459,7 @@ class _HomeViewState extends State<HomeView> {
           ..._buildCategorySections(payload.parents, theme),
           const SizedBox(height: 16),
           if (payload.products.isNotEmpty) _buildTopPicks(payload.products, theme),
-          const SizedBox(height: 32),
+          const SizedBox(height: 100),
         ]),
       );
     }
@@ -881,71 +881,80 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: displayProducts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.65,
-            ),
-            itemBuilder: (context, index) {
-              final product = displayProducts[index];
-              final image = _apiService.resolveImageUrl((product.images != null && product.images!.isNotEmpty) ? product.images!.first : null);
-              final price = product.discountPrice != null && product.discountPrice! > 0
-                  ? 'Rs ${product.discountPrice}'
-                  : 'Rs ${product.price ?? '0'}';
-              final categoryName = (product.parentCategoryName ?? '').trim().isEmpty
-                  ? (product.categoryName ?? 'Uncategorized').trim()
-                  : product.parentCategoryName!.trim();
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final gridDelegate = ResponsiveProductGridConfig.createGridDelegate(
+                containerWidth: constraints.maxWidth,
+                horizontalPadding: 0,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                crossAxisCount: 2,
+              );
 
-              // Calculate discount % to show
-              String? discountBadge;
-              if (product.discountPercentage != null && product.discountPercentage! > 0) {
-                 discountBadge = '${product.discountPercentage}% OFF';
-              }
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: displayProducts.length,
+                gridDelegate: gridDelegate,
+                itemBuilder: (context, index) {
+                  final product = displayProducts[index];
+                  final image = _apiService.resolveImageUrl((product.images != null && product.images!.isNotEmpty) ? product.images!.first : null);
+                  final price = product.discountPrice != null && product.discountPrice! > 0
+                      ? 'Rs ${product.discountPrice}'
+                      : 'Rs ${product.price ?? '0'}';
+                  final categoryName = (product.parentCategoryName ?? '').trim().isEmpty
+                      ? (product.categoryName ?? 'Uncategorized').trim()
+                      : product.parentCategoryName!.trim();
 
-              return ProductCardWidget(
-                productId: product.id!,
-                product: product,
-                name: (product.name ?? '').trim().isEmpty ? 'Unnamed Product' : product.name!.trim(),
-                priceText: price,
-                oldPriceText: product.discountPrice != null && product.discountPrice! > 0
-                    ? 'Rs ${product.price}'
-                    : null,
-                categoryName: categoryName,
-                imageUrl: image,
-                discountBadgeText: discountBadge,
-                rating: product.averageRating,
-                reviewCount: product.reviewCount,
-                onTap: () {
-                  if (product.id == null) return;
-                  final mappedProduct = ProductModel(
-                    id: product.id!.toString(),
-                    category: _getCategoryEnum(product.parentCategoryName ?? product.categoryName),
+                  // Calculate discount % to show
+                  String? discountBadge;
+                  if (product.discountPercentage != null && product.discountPercentage! > 0) {
+                     discountBadge = '${product.discountPercentage}% OFF';
+                  }
+
+                  return ProductCardWidget(
+                    productId: product.id!,
+                    product: product,
                     name: (product.name ?? '').trim().isEmpty ? 'Unnamed Product' : product.name!.trim(),
-                    imageUrl: image,
-                    price: product.discountPrice != null && product.discountPrice! > 0
-                        ? double.tryParse(product.discountPrice.toString()) ?? 0.0
-                        : double.tryParse(product.price?.toString() ?? '0') ?? 0.0,
-                    originalPrice: product.discountPrice != null && product.discountPrice! > 0
-                        ? double.tryParse(product.price?.toString() ?? '0') ?? 0.0
+                    priceText: price,
+                    oldPriceText: product.discountPrice != null && product.discountPrice! > 0
+                        ? 'Rs ${product.price}'
                         : null,
-                    discountTag: discountBadge,
+                    categoryName: categoryName,
+                    imageUrl: image,
+                    discountBadgeText: discountBadge,
                     rating: product.averageRating,
                     reviewCount: product.reviewCount,
-                    reviews: const [],
-                    stockLeft: product.stockQuantity ?? product.stock,
-                    isFastDelivery: null,
-                    isBestSeller: null,
-                  );
-                  Navigator.of(context).push(
-                    ProductDetailsView.route(
-                      product: mappedProduct,
-                      currentBottomBarIndex: 0,
-                    ),
+                    stockQuantity: product.stockQuantity ?? product.stock,
+                    isInStock: product.isInStock,
+                    onTap: () {
+                      if (product.id == null) return;
+                      final mappedProduct = ProductModel(
+                        id: product.id!.toString(),
+                        category: _getCategoryEnum(product.parentCategoryName ?? product.categoryName),
+                        name: (product.name ?? '').trim().isEmpty ? 'Unnamed Product' : product.name!.trim(),
+                        imageUrl: image,
+                        price: product.discountPrice != null && product.discountPrice! > 0
+                            ? double.tryParse(product.discountPrice.toString()) ?? 0.0
+                            : double.tryParse(product.price?.toString() ?? '0') ?? 0.0,
+                        originalPrice: product.discountPrice != null && product.discountPrice! > 0
+                            ? double.tryParse(product.price?.toString() ?? '0') ?? 0.0
+                            : null,
+                        discountTag: discountBadge,
+                        rating: product.averageRating,
+                        reviewCount: product.reviewCount,
+                        reviews: const [],
+                        stockLeft: product.stockQuantity ?? product.stock,
+                        isFastDelivery: null,
+                        isBestSeller: null,
+                      );
+                      Navigator.of(context).push(
+                        ProductDetailsView.route(
+                          product: mappedProduct,
+                          currentBottomBarIndex: 0,
+                        ),
+                      );
+                    },
                   );
                 },
               );

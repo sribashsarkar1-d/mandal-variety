@@ -29,6 +29,8 @@ class ProductCardWidget extends StatefulWidget {
     this.rating,
     this.reviewCount,
     required this.onTap,
+    this.stockQuantity,
+    this.isInStock,
   });
 
   final int productId;
@@ -42,6 +44,8 @@ class ProductCardWidget extends StatefulWidget {
   final double? rating;
   final int? reviewCount;
   final VoidCallback onTap;
+  final int? stockQuantity;
+  final bool? isInStock;
 
   @override
   State<ProductCardWidget> createState() => _ProductCardWidgetState();
@@ -94,8 +98,19 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
     super.dispose();
   }
 
+  bool get _isOutOfStock {
+    if (widget.isInStock == false) return true;
+    if (widget.stockQuantity != null && widget.stockQuantity! <= 0) return true;
+    if (widget.product != null) {
+      final stock = widget.product!.stockQuantity ?? widget.product!.stock;
+      if (stock != null && stock <= 0) return true;
+      if (widget.product!.isInStock == false) return true;
+    }
+    return false;
+  }
+
   Future<void> _handleAddToCart() async {
-    if (_cartQuantity > 0 || _isCartActionLoading) return;
+    if (_cartQuantity > 0 || _isCartActionLoading || _isOutOfStock) return;
     final allowed = await handleProtectedAction(context);
     if (!allowed || !mounted) return;
 
@@ -226,8 +241,31 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                               ),
                       ),
                     ),
-                    // Discount Badge
-                    if (widget.discountBadgeText != null && widget.discountBadgeText!.isNotEmpty)
+                    // Out of Stock Badge / Discount Badge
+                    if (_isOutOfStock)
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFD32F2F),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomRight: Radius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Out of Stock',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (widget.discountBadgeText != null && widget.discountBadgeText!.isNotEmpty)
                       Positioned(
                         top: 0,
                         left: 0,
@@ -413,36 +451,71 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
                         ],
                       ),
                       
-                      // Full-width Add to Cart Button
+                      // Full-width Add to Cart Button or Out of Stock indicator
                       SizedBox(
                         width: double.infinity,
                         height: 36,
-                        child: ElevatedButton.icon(
-                          onPressed: _isCartActionLoading ? null : _handleAddToCart,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF008B4C),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          icon: _isCartActionLoading
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                )
-                              : const Icon(Icons.shopping_cart_outlined, size: 16),
-                          label: const Text(
-                            'Add to Cart',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        child: _isOutOfStock
+                            ? ElevatedButton.icon(
+                                onPressed: null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark
+                                      ? Colors.grey[850]
+                                      : const Color(0xFFEEEEEE),
+                                  disabledBackgroundColor: isDark
+                                      ? Colors.grey[850]
+                                      : const Color(0xFFEEEEEE),
+                                  disabledForegroundColor: const Color(0xFFD32F2F),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(
+                                      color: const Color(0xFFD32F2F).withValues(alpha: 0.35),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(
+                                  Icons.remove_shopping_cart_outlined,
+                                  size: 16,
+                                  color: Color(0xFFD32F2F),
+                                ),
+                                label: const Text(
+                                  'Out of Stock',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFD32F2F),
+                                  ),
+                                ),
+                              )
+                            : ElevatedButton.icon(
+                                onPressed: _isCartActionLoading ? null : _handleAddToCart,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF008B4C),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                icon: _isCartActionLoading
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.shopping_cart_outlined, size: 16),
+                                label: const Text(
+                                  'Add to Cart',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),

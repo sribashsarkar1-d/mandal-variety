@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/responsive/responsive_product_grid_config.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Static minimum display: 1.8 s (controlled in [ProductListingView]).
@@ -77,22 +78,28 @@ class _ProductListingSkeletonSliverState
         return SliverPadding(
           // Same padding as ProductGridSliver default
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              // Matches real grid card ratio exactly
-              childAspectRatio: 0.58,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (_, __) => _SkeletonCard(
-                cardBg: cardBg,
-                boneBase: boneBase,
-                buildShader: buildShader,
-              ),
-              childCount: 8,
-            ),
+          sliver: SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final gridDelegate = ResponsiveProductGridConfig.createGridDelegate(
+                containerWidth: constraints.crossAxisExtent,
+                horizontalPadding: 0,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                crossAxisCount: 2,
+              );
+
+              return SliverGrid(
+                gridDelegate: gridDelegate,
+                delegate: SliverChildBuilderDelegate(
+                  (_, _) => _SkeletonCard(
+                    cardBg: cardBg,
+                    boneBase: boneBase,
+                    buildShader: buildShader,
+                  ),
+                  childCount: 8,
+                ),
+              );
+            },
           ),
         );
       },
@@ -117,7 +124,7 @@ class _SkeletonCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: ShaderMask(
         blendMode: BlendMode.srcATop,
@@ -125,15 +132,14 @@ class _SkeletonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 55,
+            AspectRatio(
+              aspectRatio: 1.0,
               child: Container(
                 color: boneBase,
               ),
             ),
 
             Expanded(
-              flex: 45,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                 child: Column(

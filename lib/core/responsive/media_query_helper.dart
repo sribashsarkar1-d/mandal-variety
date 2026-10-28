@@ -3,19 +3,18 @@ import 'package:flutter/widgets.dart';
 /// Centralized file for all MediaQuery logic.
 /// UI widgets should use these helpers instead of calling MediaQuery directly.
 class MediaQueryHelper {
-  static late MediaQueryData _mediaQueryData;
-  static late double screenWidth;
-  static late double screenHeight;
-  static late Orientation orientation;
+  static double screenWidth = 375.0;
+  static double screenHeight = 812.0;
+  static Orientation orientation = Orientation.portrait;
 
   /// Call this inside the build method of the root widget (or the first screen).
   static void init(BuildContext context) {
-    _mediaQueryData =
+    final data =
         MediaQuery.maybeOf(context) ??
         MediaQueryData.fromView(View.of(context));
-    screenWidth = _mediaQueryData.size.width;
-    screenHeight = _mediaQueryData.size.height;
-    orientation = _mediaQueryData.orientation;
+    screenWidth = data.size.width;
+    screenHeight = data.size.height;
+    orientation = data.orientation;
   }
 
   static bool get isMobile => screenWidth < 500;

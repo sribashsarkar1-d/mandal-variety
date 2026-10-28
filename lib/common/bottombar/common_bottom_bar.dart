@@ -75,8 +75,10 @@ class CommonBottomBar extends StatelessWidget {
             child: SizedBox(
               height: _barHeight,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: _horizontalPadding,
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.sizeOf(context).width < 360
+                      ? 8.0
+                      : _horizontalPadding,
                 ),
                 child: Center(
                   child: ConstrainedBox(
@@ -138,30 +140,38 @@ class _BottomBarItemWidget extends StatelessWidget {
         );
 
         final availableWidth = constraints.maxWidth;
-        final bool showLabel = isSelected && availableWidth >= 88;
+        final bool isNarrow = availableWidth < 105;
+        final bool showLabel = isSelected && availableWidth >= 80;
 
         final double horizontalPadding = isSelected
-            ? (showLabel ? 14.0 : 10.0)
-            : 10.0;
+            ? (showLabel ? (isNarrow ? 8.0 : 12.0) : 8.0)
+            : (isNarrow ? 6.0 : 10.0);
         final double verticalPadding = 8.0;
+        final double effectiveIconSize = isNarrow ? (iconSize - 2.0) : iconSize;
 
         final double computedLabelMaxWidth =
-            (availableWidth - (horizontalPadding * 2) - iconSize - 8.0).clamp(
+            (availableWidth - (horizontalPadding * 2) - effectiveIconSize - 6.0).clamp(
               0.0,
-              96.0,
+              110.0,
             );
 
         final Widget labelWidget = showLabel
             ? Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(left: 6.0),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: computedLabelMaxWidth),
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.fade,
-                    softWrap: false,
-                    style: labelStyle,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      style: labelStyle?.copyWith(
+                        fontSize: isNarrow ? 11.5 : 12.0,
+                      ),
+                    ),
                   ),
                 ),
               )
@@ -206,7 +216,7 @@ class _BottomBarItemWidget extends StatelessWidget {
                             color: isSelected
                                 ? theme.primaryColor
                                 : unselectedColor,
-                            size: iconSize,
+                            size: effectiveIconSize,
                           ),
                           AnimatedSize(
                             duration: const Duration(milliseconds: 250),

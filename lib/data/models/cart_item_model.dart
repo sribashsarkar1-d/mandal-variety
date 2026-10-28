@@ -11,6 +11,8 @@ class CartItemModel {
   final double unitPrice;
   final int quantity;
   final int? maxQuantity;
+  final int? availableStock;
+  final bool? isInStock;
 
   const CartItemModel({
     required this.productId,
@@ -19,7 +21,20 @@ class CartItemModel {
     required this.quantity,
     this.maxQuantity,
     this.imageUrl,
+    this.availableStock,
+    this.isInStock,
   });
+
+  bool get isOutOfStock =>
+      (isInStock == false) ||
+      (availableStock != null && availableStock! <= 0);
+
+  bool get hasInsufficientStock =>
+      !isOutOfStock &&
+      availableStock != null &&
+      quantity > availableStock!;
+
+  bool get isAvailable => !isOutOfStock && !hasInsufficientStock;
 
   CartItemModel copyWith({
     String? productId,
@@ -28,6 +43,8 @@ class CartItemModel {
     double? unitPrice,
     int? quantity,
     int? maxQuantity,
+    int? availableStock,
+    bool? isInStock,
   }) {
     return CartItemModel(
       productId: productId ?? this.productId,
@@ -36,6 +53,8 @@ class CartItemModel {
       unitPrice: unitPrice ?? this.unitPrice,
       quantity: quantity ?? this.quantity,
       maxQuantity: maxQuantity ?? this.maxQuantity,
+      availableStock: availableStock ?? this.availableStock,
+      isInStock: isInStock ?? this.isInStock,
     );
   }
 
@@ -47,6 +66,8 @@ class CartItemModel {
       'unitPrice': unitPrice,
       'quantity': quantity,
       'maxQuantity': maxQuantity,
+      'availableStock': availableStock,
+      'isInStock': isInStock,
     };
   }
 
@@ -54,11 +75,13 @@ class CartItemModel {
     final rawPrice = json['unitPrice'];
     final rawQty = json['quantity'];
     final rawMax = json['maxQuantity'];
+    final rawStock = json['availableStock'] ?? json['stock_quantity'] ?? json['stock'];
+    final rawInStock = json['isInStock'] ?? json['is_in_stock'];
 
     return CartItemModel(
-      productId: (json['productId'] ?? '').toString(),
+      productId: (json['productId'] ?? json['product_id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
-      imageUrl: json['imageUrl']?.toString(),
+      imageUrl: json['imageUrl']?.toString() ?? json['image']?.toString(),
       unitPrice: rawPrice is num
           ? rawPrice.toDouble()
           : double.tryParse(rawPrice?.toString() ?? '') ?? 0.0,
@@ -68,6 +91,12 @@ class CartItemModel {
       maxQuantity: rawMax is int
           ? rawMax
           : int.tryParse(rawMax?.toString() ?? ''),
+      availableStock: rawStock is int
+          ? rawStock
+          : int.tryParse(rawStock?.toString() ?? ''),
+      isInStock: rawInStock is bool
+          ? rawInStock
+          : (rawInStock != null ? rawInStock.toString() == '1' || rawInStock.toString() == 'true' : null),
     );
   }
 

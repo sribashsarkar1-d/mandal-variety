@@ -888,14 +888,19 @@ class _CheckoutViewState extends State<CheckoutView> {
         );
       } else {
         if (!mounted) return;
+        await CartCoordinator.instance.syncFromServer();
+        await _cartVm.init();
         AppSnackbar.error(
           context,
-          res.message ?? 'Failed to place order. Please try again.',
+          res.message ?? 'Failed to place order. Please check item stock and retry.',
         );
       }
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.error(context, e.toString());
+      await CartCoordinator.instance.syncFromServer();
+      await _cartVm.init();
+      final err = e is ApiServiceException ? e.message : e.toString();
+      AppSnackbar.error(context, err);
     } finally {
       if (mounted) {
         setState(() => _placingOrder = false);

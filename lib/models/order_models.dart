@@ -324,13 +324,25 @@ class OrderCreate {
   bool? success;
   String? message;
   OrderCreateData? data;
+  List<UnavailableProductModel>? unavailableProducts;
 
-  OrderCreate({this.success, this.message, this.data});
+  OrderCreate({
+    this.success,
+    this.message,
+    this.data,
+    this.unavailableProducts,
+  });
 
   OrderCreate.fromJson(Map<String, dynamic> json) {
     success = json['success'];
     message = json['message']?.toString();
     data = json['data'] != null ? OrderCreateData.fromJson(json['data'] as Map<String, dynamic>) : null;
+    if (json['unavailable_products'] is List) {
+      unavailableProducts = (json['unavailable_products'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map((e) => UnavailableProductModel.fromJson(e))
+          .toList();
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -340,11 +352,41 @@ class OrderCreate {
     if (data != null) {
       out['data'] = data!.toJson();
     }
+    if (unavailableProducts != null) {
+      out['unavailable_products'] =
+          unavailableProducts!.map((e) => e.toJson()).toList();
+    }
     return out;
   }
 
   // Compatibility Getter
   int? get orderId => data?.orderId != null ? int.tryParse(data!.orderId!) : null;
+}
+
+class UnavailableProductModel {
+  int? productId;
+  String? productName;
+  int? availableStock;
+
+  UnavailableProductModel({
+    this.productId,
+    this.productName,
+    this.availableStock,
+  });
+
+  UnavailableProductModel.fromJson(Map<String, dynamic> json) {
+    productId = _toInt(json['product_id']);
+    productName = json['product_name']?.toString();
+    availableStock = _toInt(json['available_stock']);
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> out = <String, dynamic>{};
+    out['product_id'] = productId;
+    out['product_name'] = productName;
+    out['available_stock'] = availableStock;
+    return out;
+  }
 }
 
 class OrderCreateData {

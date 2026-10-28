@@ -142,6 +142,18 @@ class CartCoordinator {
       final delta = safeQuantity - (existing.quantity == 0 ? 0 : existing.quantity);
       if (delta == 0 && existing.quantity != 0) return;
 
+      // Do not allow increasing quantity if item is out of stock
+      if (existing.isOutOfStock && safeQuantity > existing.quantity) {
+        return;
+      }
+      // Do not allow increasing quantity beyond available stock
+      if (existing.availableStock != null &&
+          existing.availableStock! > 0 &&
+          safeQuantity > existing.availableStock! &&
+          safeQuantity > existing.quantity) {
+        return;
+      }
+
       // Optimistic update
       await _repository.setQuantity(productId, safeQuantity);
 
@@ -281,6 +293,8 @@ class CartCoordinator {
       }
 
       final displayName = name.isEmpty ? 'Product $productId' : name;
+      final stockQty = item.availableStock ?? item.stockQuantity;
+      final inStock = item.isInStock ?? (stockQty != null ? stockQty > 0 : true);
 
       await _repository.upsertItem(
         CartItemModel(
@@ -289,6 +303,9 @@ class CartCoordinator {
           imageUrl: _apiService.resolveImageUrl(item.images),
           unitPrice: price,
           quantity: quantity,
+          maxQuantity: stockQty,
+          availableStock: stockQty,
+          isInStock: inStock,
         ),
       );
     }

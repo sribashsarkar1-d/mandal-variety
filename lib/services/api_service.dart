@@ -1021,7 +1021,14 @@ class ApiService {
         withAuth: true,
       );
       final res = CreateOrderResponse.fromJson(jsonMap);
-      if (res.success == true) return res;
+      return res;
+    } on ApiServiceException catch (e) {
+      if (e.statusCode == 400 ||
+          e.statusCode == 422 ||
+          e.message.toLowerCase().contains('stock') ||
+          e.message.toLowerCase().contains('unavailable')) {
+        rethrow;
+      }
     } catch (_) {}
 
     // Try Form Post
@@ -1035,7 +1042,14 @@ class ApiService {
         withAuth: true,
       );
       final res = CreateOrderResponse.fromJson(formMap);
-      if (res.success == true) return res;
+      return res;
+    } on ApiServiceException catch (e) {
+      if (e.statusCode == 400 ||
+          e.statusCode == 422 ||
+          e.message.toLowerCase().contains('stock') ||
+          e.message.toLowerCase().contains('unavailable')) {
+        rethrow;
+      }
     } catch (_) {}
 
     // Try POST with Query string
@@ -1047,7 +1061,14 @@ class ApiService {
         withAuth: true,
       );
       final res = CreateOrderResponse.fromJson(queryPostMap);
-      if (res.success == true) return res;
+      return res;
+    } on ApiServiceException catch (e) {
+      if (e.statusCode == 400 ||
+          e.statusCode == 422 ||
+          e.message.toLowerCase().contains('stock') ||
+          e.message.toLowerCase().contains('unavailable')) {
+        rethrow;
+      }
     } catch (_) {}
 
     // Try GET with Query string
@@ -1059,6 +1080,7 @@ class ApiService {
       );
       return CreateOrderResponse.fromJson(queryGetMap);
     } catch (e) {
+      if (e is ApiServiceException) rethrow;
       throw ApiServiceException('Failed to place order: $e');
     }
   }

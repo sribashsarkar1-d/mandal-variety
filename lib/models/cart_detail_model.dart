@@ -105,6 +105,11 @@ class CartDetailItem {
   String? price;
   String? images;
   String? sku;
+  int? stockQuantity;
+  int? availableStock;
+  bool? isInStock;
+  bool? hasInsufficientStock;
+  bool? isAvailable;
 
   CartDetailItem({
     this.id,
@@ -115,6 +120,11 @@ class CartDetailItem {
     this.price,
     this.images,
     this.sku,
+    this.stockQuantity,
+    this.availableStock,
+    this.isInStock,
+    this.hasInsufficientStock,
+    this.isAvailable,
   });
 
   CartDetailItem.fromJson(Map<String, dynamic> json) {
@@ -179,6 +189,32 @@ class CartDetailItem {
       (json['product'] is Map ? (json['product'] as Map)['sku'] : null) ??
       ''
     ).toString();
+
+    stockQuantity = _toInt(json['stock_quantity'] ?? json['stockQuantity'] ?? json['stock']);
+    availableStock = _toInt(json['available_stock'] ?? json['stock_quantity'] ?? json['stock']);
+    
+    final rawInStock = json['isInStock'] ?? json['is_in_stock'];
+    if (rawInStock is bool) {
+      isInStock = rawInStock;
+    } else if (rawInStock != null) {
+      isInStock = rawInStock.toString() == '1' || rawInStock.toString() == 'true';
+    } else if (availableStock != null) {
+      isInStock = availableStock! > 0;
+    }
+
+    final rawInsufficient = json['has_insufficient_stock'];
+    if (rawInsufficient is bool) {
+      hasInsufficientStock = rawInsufficient;
+    } else if (availableStock != null && quantity != null) {
+      hasInsufficientStock = quantity! > availableStock!;
+    }
+
+    final rawAvailable = json['is_available'];
+    if (rawAvailable is bool) {
+      isAvailable = rawAvailable;
+    } else {
+      isAvailable = (isInStock != false) && (hasInsufficientStock != true);
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -191,8 +227,19 @@ class CartDetailItem {
     out['price'] = price;
     out['images'] = images;
     out['sku'] = sku;
+    out['stock_quantity'] = stockQuantity;
+    out['available_stock'] = availableStock;
+    out['isInStock'] = isInStock;
+    out['is_in_stock'] = isInStock;
+    out['has_insufficient_stock'] = hasInsufficientStock;
+    out['is_available'] = isAvailable;
     return out;
   }
+
+  bool get isOutOfStock =>
+      (isInStock == false) ||
+      (availableStock != null && availableStock! <= 0) ||
+      (stockQuantity != null && stockQuantity! <= 0);
 }
 
 int? _toInt(dynamic value) {

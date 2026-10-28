@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_currency.dart';
 import '../../core/auth/auth_guard.dart';
 import '../../common/cards/product_grid_card.dart';
+import '../../core/responsive/responsive_product_grid_config.dart';
 import '../../common/drawer/app_drawer.dart';
 import '../../common/appbar/primary_sliver_app_bar.dart';
 import '../../common/buttons/app_button.dart';
@@ -344,10 +345,10 @@ class _WishlistViewState extends State<WishlistView>
               child: Builder(
                 builder: (context) {
                   final screenWidth = MediaQuery.sizeOf(context).width;
-                  final cardWidth = ((screenWidth - 32 - 12) / 2)
-                      .clamp(150.0, 220.0)
-                      .toDouble();
-                  final cardHeight = cardWidth / 0.65; // Match home screen layout
+                  final cardWidth = ResponsiveProductGridConfig.calculateCardWidth(
+                    containerWidth: screenWidth,
+                  );
+                  final cardHeight = ResponsiveProductGridConfig.calculateCardHeight(cardWidth);
 
                   return SizedBox(
                     height: cardHeight,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/responsive/responsive_product_grid_config.dart';
 import '../../core/utils/app_currency.dart';
 import '../../data/models/product_model.dart';
 import '../../widgets/product_card_widget.dart';
@@ -20,21 +21,30 @@ class ProductGridSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverPadding(
       padding: padding,
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.65, // Updated to match home screen
-        ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final p = products[index];
-          return ProductGridCard(
-            key: ValueKey(p.id),
-            product: p,
-            onTap: onProductTap == null ? null : () => onProductTap!.call(p),
+      sliver: SliverLayoutBuilder(
+        builder: (context, constraints) {
+          // constraints.crossAxisExtent is the exact width available inside this SliverPadding
+          final availableWidth = constraints.crossAxisExtent;
+          final gridDelegate = ResponsiveProductGridConfig.createGridDelegate(
+            containerWidth: availableWidth,
+            horizontalPadding: 0, // Padding already handled by outer SliverPadding
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            crossAxisCount: 2,
           );
-        }, childCount: products.length),
+
+          return SliverGrid(
+            gridDelegate: gridDelegate,
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final p = products[index];
+              return ProductGridCard(
+                key: ValueKey(p.id),
+                product: p,
+                onTap: onProductTap == null ? null : () => onProductTap!.call(p),
+              );
+            }, childCount: products.length),
+          );
+        },
       ),
     );
   }
@@ -81,6 +91,8 @@ class ProductGridCard extends StatelessWidget {
       discountBadgeText: discountBadgeText,
       rating: product.rating,
       reviewCount: product.reviewCount,
+      stockQuantity: product.stockLeft,
+      isInStock: product.stockLeft != null ? product.stockLeft! > 0 : null,
       onTap: onTap ?? () {},
     );
   }

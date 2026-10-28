@@ -441,7 +441,7 @@ class _ProductListingViewState extends State<ProductListingView> {
                       ),
                     ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 84)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
             ],

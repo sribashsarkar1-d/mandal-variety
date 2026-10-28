@@ -10,6 +10,7 @@ import '../../common/bottombar/common_bottom_bar.dart';
 import '../../common/buttons/app_button.dart';
 import '../../common/cards/app_card.dart';
 import '../../common/cards/product_grid_card.dart';
+import '../../core/responsive/responsive_product_grid_config.dart';
 import '../../common/image/app_cached_image.dart';
 import '../../common/image_viewer/zoomable_image_viewer.dart';
 import '../../common/snackbars/app_snackbar.dart';
@@ -192,7 +193,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
   }
 
   Future<void> _handleAddToCart() async {
-    if (_isAddingToCart || _vm.isInCart) return;
+    if (_isAddingToCart || _vm.isInCart || _vm.isOutOfStock) return;
     final allowed = await handleProtectedAction(context);
     if (!allowed) return;
     HapticFeedback.lightImpact();
@@ -338,7 +339,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
     }
 
     final stockLeft = _vm.displayStockLeft;
-    final outOfStock = stockLeft != null && stockLeft <= 0;
+    final outOfStock = _vm.isOutOfStock || (stockLeft != null && stockLeft <= 0);
 
     if (isWide) return _wideLayout(theme, outOfStock);
     return _narrowLayout(theme, outOfStock);
@@ -656,7 +657,8 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
     final primary = const Color(0xFF388E3C); // Green
     
     final stockLeft = _vm.displayStockLeft;
-    final outOfStock = stockLeft != null && stockLeft <= 0;
+    final outOfStock = _vm.isOutOfStock || (stockLeft != null && stockLeft <= 0);
+    final isLowStock = _vm.isLowStock;
     
     return Padding(
       padding: EdgeInsets.fromLTRB(tabletMode ? 24 : 16, tabletMode ? 0 : 16, 16, 24),
@@ -791,7 +793,7 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF4F9F4),
+                    color: outOfStock ? const Color(0xFFFFEBEE) : const Color(0xFFF4F9F4),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -816,8 +818,12 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                             ),
                             if (!outOfStock && stockLeft != null)
                               Text(
-                                '$stockLeft available',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF546E7A)),
+                                isLowStock ? 'Only $stockLeft left in stock!' : '$stockLeft available',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isLowStock ? FontWeight.w600 : FontWeight.normal,
+                                  color: isLowStock ? const Color(0xFFE65100) : const Color(0xFF546E7A),
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                           ],
@@ -867,33 +873,53 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
                 ),
             ],
           ),
-            const SizedBox(height: 16),
-            
-            // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _isAddingToCart || _vm.isInCart ? _goToCart : _handleAddToCart,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF388E3C),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    icon: _isAddingToCart 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Icon(_vm.isInCart ? Icons.shopping_bag : Icons.shopping_cart_outlined, size: 20),
-                    label: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        _vm.isInCart ? 'Go to Cart' : 'Add to Cart',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          const SizedBox(height: 16),
+          
+          // Buttons
+          Row(
+            children: [
+              Expanded(
+                child: outOfStock
+                    ? ElevatedButton.icon(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade300,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          disabledForegroundColor: Colors.grey.shade600,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.block, size: 20),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Out of Stock',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: _isAddingToCart || _vm.isInCart ? _goToCart : _handleAddToCart,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF388E3C),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        icon: _isAddingToCart 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Icon(_vm.isInCart ? Icons.shopping_bag : Icons.shopping_cart_outlined, size: 20),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _vm.isInCart ? 'Go to Cart' : 'Add to Cart',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
+              ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
@@ -1029,34 +1055,44 @@ class _ProductDetailsViewState extends State<ProductDetailsView>
   ];
 
   Widget _productCarousel(List<ProductModel> products) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: SizedBox(
-        height: 280,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          physics: const BouncingScrollPhysics(),
-          itemCount: products.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (_, i) {
-            final p = products[i];
-            return SizedBox(
-              width: 164,
-              child: ProductGridCard(
-                key: ValueKey(p.id),
-                product: p,
-                onTap: () => Navigator.of(context).push(
-                  ProductDetailsView.route(
+    return Builder(
+      builder: (context) {
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final cardWidth = ResponsiveProductGridConfig.calculateCardWidth(
+          containerWidth: screenWidth,
+        );
+        final cardHeight = ResponsiveProductGridConfig.calculateCardHeight(cardWidth);
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: SizedBox(
+            height: cardHeight,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              physics: const BouncingScrollPhysics(),
+              itemCount: products.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (_, i) {
+                final p = products[i];
+                return SizedBox(
+                  width: cardWidth,
+                  child: ProductGridCard(
+                    key: ValueKey(p.id),
                     product: p,
-                    currentBottomBarIndex: widget.currentBottomBarIndex,
+                    onTap: () => Navigator.of(context).push(
+                      ProductDetailsView.route(
+                        product: p,
+                        currentBottomBarIndex: widget.currentBottomBarIndex,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

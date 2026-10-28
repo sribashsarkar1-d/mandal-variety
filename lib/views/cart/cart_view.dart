@@ -6,6 +6,7 @@ import '../../common/buttons/app_button.dart';
 import '../../common/bottombar/common_bottom_bar.dart';
 import '../../common/cards/app_card.dart';
 import '../../common/cards/product_grid_card.dart';
+import '../../core/responsive/responsive_product_grid_config.dart';
 import '../../common/dialogs/app_dialog.dart';
 import '../../common/pages/no_internet_page.dart';
 import '../../core/auth/auth_guard.dart';
@@ -166,7 +167,7 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
       rating: item.averageRating,
       reviewCount: item.reviewCount,
       reviews: const [],
-      stockLeft: null,
+      stockLeft: item.stockQuantity ?? item.stock,
       isFastDelivery: null,
       isBestSeller: null,
     );
@@ -469,10 +470,10 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                             final screenWidth = MediaQuery.sizeOf(
                               context,
                             ).width;
-                            final cardWidth = ((screenWidth - 32 - 12) / 2)
-                                .clamp(150.0, 220.0)
-                                .toDouble();
-                            final cardHeight = cardWidth / 0.58;
+                            final cardWidth = ResponsiveProductGridConfig.calculateCardWidth(
+                              containerWidth: screenWidth,
+                            );
+                            final cardHeight = ResponsiveProductGridConfig.calculateCardHeight(cardWidth);
 
                             return SizedBox(
                               height: cardHeight,
@@ -654,22 +655,66 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
                                       label: const Text('Clear Cart'),
                                     ),
                                   ),
+                                  if (_vm.hasStockIssues) ...[
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFEBEE),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFFFFCDD2),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.warning_amber_rounded,
+                                            color: Color(0xFFD32F2F),
+                                            size: 22,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              'Some items in your cart are out of stock or have insufficient quantity. Please update your cart before proceeding to checkout.',
+                                              style: TextStyle(
+                                                color: Colors.red.shade800,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                   const SizedBox(height: 12),
                                   AppButton.primary(
                                     text: 'Proceed to Checkout',
                                     isFullWidth: true,
-                                    onPressed: () {
-                                      HapticFeedback.selectionClick();
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => CheckoutView(
-                                            currentBottomBarIndex:
-                                                widget.currentBottomBarIndex,
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                    onPressed: _vm.hasStockIssues
+                                        ? () {
+                                            HapticFeedback.lightImpact();
+                                            AppSnackbar.warning(
+                                              context,
+                                              'Please remove out-of-stock items or adjust quantities before checking out.',
+                                            );
+                                          }
+                                        : () {
+                                            HapticFeedback.selectionClick();
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => CheckoutView(
+                                                  currentBottomBarIndex:
+                                                      widget.currentBottomBarIndex,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                   ),
                                 ],
                               ),
@@ -798,19 +843,54 @@ class _CartItemCard extends StatelessWidget {
         ? AppColors.darkError
         : AppColors.lightError;
 
+    final isOutOfStock = item.isOutOfStock;
+    final hasInsufficientStock = item.hasInsufficientStock;
+
     return AppCard(
       padding: const EdgeInsets.all(14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 72,
-              height: 72,
-              color: theme.dividerColor.withValues(alpha: 0.2),
-              child: _ProductImage(imageUrl: item.imageUrl),
-            ),
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  color: theme.dividerColor.withValues(alpha: 0.2),
+                  child: _ProductImage(imageUrl: item.imageUrl),
+                ),
+              ),
+              if (isOutOfStock)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD32F2F),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'OUT',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -821,14 +901,65 @@ class _CartItemCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        item.name,
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: onSurface,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: onSurface,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (isOutOfStock)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFEBEE),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: const Color(0xFFFFCDD2),
+                                ),
+                              ),
+                              child: const Text(
+                                'Out of Stock',
+                                style: TextStyle(
+                                  color: Color(0xFFD32F2F),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          else if (hasInsufficientStock)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF3E0),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: const Color(0xFFFFE0B2),
+                                ),
+                              ),
+                              child: Text(
+                                'Only ${item.availableStock} in stock',
+                                style: const TextStyle(
+                                  color: Color(0xFFE65100),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -891,7 +1022,7 @@ class _CartItemCard extends StatelessWidget {
                   children: [
                     _QtyButton(
                       icon: Icons.remove,
-                      onTap: item.quantity <= 1
+                      onTap: isOutOfStock || item.quantity <= 1
                           ? null
                           : () {
                               HapticFeedback.selectionClick();
@@ -910,10 +1041,15 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     _QtyButton(
                       icon: Icons.add,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        onIncrement();
-                      },
+                      onTap: isOutOfStock ||
+                              hasInsufficientStock ||
+                              (item.availableStock != null &&
+                                  item.quantity >= item.availableStock!)
+                          ? null
+                          : () {
+                              HapticFeedback.selectionClick();
+                              onIncrement();
+                            },
                     ),
                     const Spacer(),
                     Text(
@@ -925,6 +1061,30 @@ class _CartItemCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (isOutOfStock)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'This item is currently out of stock. Please remove it to proceed.',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else if (hasInsufficientStock)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Requested ${item.quantity} units, but only ${item.availableStock} available. Please reduce quantity.',
+                      style: TextStyle(
+                        color: Colors.orange.shade800,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

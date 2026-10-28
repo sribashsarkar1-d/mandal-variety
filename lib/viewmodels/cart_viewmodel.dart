@@ -60,6 +60,15 @@ class CartViewModel extends BaseViewModel {
 
   double get totalAmount => subtotal + totalFees;
 
+  bool get hasStockIssues =>
+      _items.any((item) => item.isOutOfStock || item.hasInsufficientStock);
+
+  List<CartItemModel> get outOfStockItems =>
+      _items.where((item) => item.isOutOfStock).toList();
+
+  List<CartItemModel> get insufficientStockItems =>
+      _items.where((item) => item.hasInsufficientStock).toList();
+
   CartItemModel? _find(String productId) {
     for (final item in _items) {
       if (item.productId == productId) return item;
@@ -70,6 +79,8 @@ class CartViewModel extends BaseViewModel {
   Future<void> increment(String productId) async {
     final item = _find(productId);
     if (item == null) return;
+    if (item.isOutOfStock) return;
+    if (item.availableStock != null && item.quantity >= item.availableStock!) return;
     if (item.maxQuantity != null && item.quantity >= item.maxQuantity!) return;
     await CartCoordinator.instance.setQuantity(productId, item.quantity + 1);
   }

@@ -98,11 +98,22 @@ class ProductListingViewModel extends BaseViewModel {
   bool _isLoadingMore = false;
   bool get isLoadingMore => _isLoadingMore;
 
-  bool _hasMore = false;
-  bool get hasMore => _hasMore;
+  List<ProductModel> _allProducts = const <ProductModel>[];
+  int _allProductsLoadedCount = 10;
+  static const int _allProductsPageSize = 10;
 
-  List<ProductModel> get filteredProducts {
-    List<ProductModel> base = [..._products];
+  bool _hasMore = false;
+  bool get hasMore {
+    if (type == ListingType.all) {
+      if (_allProducts.isEmpty) return false;
+      final totalFiltered = _filterAndSort(_allProducts).length;
+      return _allProductsLoadedCount < totalFiltered;
+    }
+    return _hasMore;
+  }
+
+  List<ProductModel> _filterAndSort(List<ProductModel> source) {
+    List<ProductModel> base = [...source];
 
     // Local text filtering only if not an API search mode
     if (type != ListingType.search && type != ListingType.voiceSearch) {
@@ -156,6 +167,17 @@ class ProductListingViewModel extends BaseViewModel {
         );
         return filtered;
     }
+  }
+
+  List<ProductModel> get filteredProducts {
+    final source = (type == ListingType.all && _allProducts.isNotEmpty)
+        ? _allProducts
+        : _products;
+    final filtered = _filterAndSort(source);
+    if (type == ListingType.all) {
+      return filtered.take(_allProductsLoadedCount).toList();
+    }
+    return filtered;
   }
 
   String get _cacheKey {
@@ -238,8 +260,16 @@ class ProductListingViewModel extends BaseViewModel {
           })
           .toList(growable: false);
 
-      _products = mapped;
-      _hasMore = false;
+      if (type == ListingType.all) {
+        _allProducts = mapped;
+        _allProductsLoadedCount = _allProductsPageSize;
+        _products = _allProducts.take(_allProductsLoadedCount).toList();
+        _hasMore = _allProducts.length > _allProductsLoadedCount;
+      } else {
+        _allProducts = mapped;
+        _products = mapped;
+        _hasMore = false;
+      }
     } catch (e, st) {
       debugPrint('ProductListing error: $e');
       debugPrint('StackTrace: $st');
@@ -368,23 +398,32 @@ class ProductListingViewModel extends BaseViewModel {
   void setSort(ProductSort sort) {
     if (_sort == sort) return;
     _sort = sort;
+    if (type == ListingType.all) {
+      _allProductsLoadedCount = _allProductsPageSize;
+    }
     notifyListeners();
   }
 
   void setQuickFilter(ProductQuickFilter filter) {
     if (_quickFilter == filter) return;
     _quickFilter = filter;
+    if (type == ListingType.all) {
+      _allProductsLoadedCount = _allProductsPageSize;
+    }
     notifyListeners();
   }
 
   Future<void> loadMore() async {
     if (_isLoadingMore) return;
-    if (!_hasMore) return;
+    if (!hasMore) return;
+    if (type != ListingType.all) return;
+
     _isLoadingMore = true;
     notifyListeners();
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      _hasMore = false;
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      _allProductsLoadedCount += _allProductsPageSize;
+      _products = _allProducts.take(_allProductsLoadedCount).toList();
     } finally {
       _isLoadingMore = false;
       notifyListeners();

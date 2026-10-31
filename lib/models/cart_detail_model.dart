@@ -103,6 +103,9 @@ class CartDetailItem {
   String? priceAtPurchase;
   String? name;
   String? price;
+  String? discountPrice;
+  String? originalPrice;
+  int? discountPercentage;
   String? images;
   String? sku;
   int? stockQuantity;
@@ -118,6 +121,9 @@ class CartDetailItem {
     this.priceAtPurchase,
     this.name,
     this.price,
+    this.discountPrice,
+    this.originalPrice,
+    this.discountPercentage,
     this.images,
     this.sku,
     this.stockQuantity,
@@ -138,29 +144,76 @@ class CartDetailItem {
     );
     
     quantity = _toInt(json['quantity'] ?? json['qty'] ?? json['quantity_ordered'] ?? 1);
-    
+
+    final pMap = json['product'] is Map ? (json['product'] as Map) : null;
+
+    dynamic extractVal(List<String> keys) {
+      for (final k in keys) {
+        if (json.containsKey(k) && json[k] != null && json[k].toString().trim().isNotEmpty) {
+          return json[k];
+        }
+      }
+      if (pMap != null) {
+        for (final k in keys) {
+          if (pMap.containsKey(k) && pMap[k] != null && pMap[k].toString().trim().isNotEmpty) {
+            return pMap[k];
+          }
+        }
+      }
+      return null;
+    }
+
     priceAtPurchase = (
-      json['price_at_purchase'] ??
-      json['purchase_price'] ??
-      json['price'] ??
+      extractVal(['price_at_purchase', 'purchase_price']) ??
+      extractVal(['price', 'unit_price']) ??
       ''
     ).toString();
     
     name = (
-      json['name'] ??
-      json['product_name'] ??
-      json['title'] ??
-      (json['product'] is Map ? (json['product'] as Map)['name'] ?? (json['product'] as Map)['title'] : null) ??
+      extractVal(['name', 'product_name', 'title']) ??
       ''
     ).toString().trim();
     
-    price = (
-      json['price'] ??
-      json['unit_price'] ??
-      (json['product'] is Map ? (json['product'] as Map)['price'] : null) ??
-      json['price_at_purchase'] ??
-      ''
-    ).toString();
+    final rawBasePrice = extractVal(['price', 'regular_price', 'original_price', 'mrp', 'base_price']);
+    final rawDiscountPrice = extractVal(['discount_price', 'discountPrice', 'discounted_price', 'offer_price', 'sale_price', 'special_price']);
+    final rawPurchasePrice = extractVal(['price_at_purchase', 'purchase_price']);
+    final rawUnit = extractVal(['unit_price', 'unitPrice']);
+
+    final baseVal = double.tryParse((rawBasePrice ?? '').toString().trim());
+    final discountVal = double.tryParse((rawDiscountPrice ?? '').toString().trim());
+    final purchaseVal = double.tryParse((rawPurchasePrice ?? '').toString().trim());
+    final unitVal = double.tryParse((rawUnit ?? '').toString().trim());
+
+    double? resolvedPrice;
+    double? resolvedOriginal;
+
+    if (discountVal != null && discountVal > 0) {
+      if (baseVal != null && discountVal < baseVal) {
+        resolvedPrice = discountVal;
+        resolvedOriginal = baseVal;
+      } else {
+        resolvedPrice = discountVal;
+      }
+    } else if (purchaseVal != null && purchaseVal > 0 && baseVal != null && purchaseVal < baseVal) {
+      resolvedPrice = purchaseVal;
+      resolvedOriginal = baseVal;
+    } else if (unitVal != null && unitVal > 0 && baseVal != null && unitVal < baseVal) {
+      resolvedPrice = unitVal;
+      resolvedOriginal = baseVal;
+    } else if (baseVal != null && baseVal > 0) {
+      resolvedPrice = baseVal;
+    } else if (purchaseVal != null && purchaseVal > 0) {
+      resolvedPrice = purchaseVal;
+    } else if (unitVal != null && unitVal > 0) {
+      resolvedPrice = unitVal;
+    }
+
+    price = (resolvedPrice ?? 0.0).toString();
+    originalPrice = resolvedOriginal?.toString();
+    discountPrice = resolvedPrice != null && resolvedOriginal != null ? resolvedPrice.toString() : null;
+
+    final rawDiscountPct = extractVal(['discount_percentage', 'discountPercentage', 'discount_percent']);
+    discountPercentage = _toInt(rawDiscountPct);
     
     dynamic extractImg(Map<String, dynamic> j) {
       for (final k in ['images', 'image', 'imageUrl', 'product_image']) {

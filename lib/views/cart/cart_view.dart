@@ -8,6 +8,7 @@ import '../../common/cards/app_card.dart';
 import '../../common/cards/product_grid_card.dart';
 import '../../core/responsive/responsive_product_grid_config.dart';
 import '../../common/dialogs/app_dialog.dart';
+import '../../common/snackbars/app_snackbar.dart';
 import '../../common/pages/no_internet_page.dart';
 import '../../core/auth/auth_guard.dart';
 import '../../core/cart/cart_coordinator.dart';
@@ -154,16 +155,31 @@ class _CartViewState extends State<CartView> with TickerProviderStateMixin {
 
   ProductModel _mapApiProduct(Data item, int index) {
     final id = item.id?.toString() ?? 'cart-api-$index';
-    final price = item.price?.toDouble() ?? 0.0;
+    final basePrice = item.price?.toDouble() ?? 0.0;
+    final discountPrice = item.discountPrice?.toDouble();
+
+    double finalPrice = basePrice;
+    double? originalPrice;
+    if (discountPrice != null && discountPrice > 0 && discountPrice < basePrice) {
+      finalPrice = discountPrice;
+      originalPrice = basePrice;
+    }
+
+    final discountPercent = item.discountPercentage;
+    final discountTag = discountPercent != null && discountPercent > 0
+        ? '$discountPercent% OFF'
+        : (originalPrice != null
+            ? '${(((originalPrice - finalPrice) / originalPrice) * 100).round()}% OFF'
+            : null);
 
     return ProductModel(
       id: id,
       category: _categoryFromApiName(item.categoryName),
       name: item.name!.trim(),
       imageUrl: _apiService.resolveImageUrl((item.images != null && item.images!.isNotEmpty) ? item.images!.first : null),
-      price: price,
-      originalPrice: null,
-      discountTag: null,
+      price: finalPrice,
+      originalPrice: originalPrice,
+      discountTag: discountTag,
       rating: item.averageRating,
       reviewCount: item.reviewCount,
       reviews: const [],
@@ -1010,12 +1026,44 @@ class _CartItemCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '${AppCurrency.symbol}${item.unitPrice.toStringAsFixed(2)}',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: onSurface,
-                  ),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  children: [
+                    Text(
+                      '${AppCurrency.symbol}${item.unitPrice.toStringAsFixed(2)}',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: onSurface,
+                      ),
+                    ),
+                    if (item.hasDiscount) ...[
+                      Text(
+                        '${AppCurrency.symbol}${item.originalPrice!.toStringAsFixed(2)}',
+                        style: AppTextStyles.caption.copyWith(
+                          decoration: TextDecoration.lineThrough,
+                          color: onSurface.withValues(alpha: 0.45),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          item.discountTag ??
+                              '${(((item.originalPrice! - item.unitPrice) / item.originalPrice!) * 100).round()}% OFF',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Row(

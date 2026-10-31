@@ -98,8 +98,10 @@ class _ProductListingViewState extends State<ProductListingView> {
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     if (!position.hasPixels) return;
-    if (position.pixels >= position.maxScrollExtent - 520) {
-      _vm.loadMore();
+    if (position.pixels > 0 && position.pixels >= position.maxScrollExtent - 250) {
+      if (_vm.hasMore && !_vm.isLoadingMore) {
+        _vm.loadMore();
+      }
     }
   }
 
@@ -434,11 +436,8 @@ class _ProductListingViewState extends State<ProductListingView> {
                     ),
 
                   if (_vm.isLoadingMore)
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 18.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
+                    SliverToBoxAdapter(
+                      child: _LoadingMoreIndicator(theme: theme),
                     ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -550,6 +549,60 @@ class _QuickChipsRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadingMoreIndicator extends StatelessWidget {
+  final ThemeData theme;
+
+  const _LoadingMoreIndicator({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20.0),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.carbonBlack : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: theme.primaryColor.withValues(alpha: 0.18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Loading more products...',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

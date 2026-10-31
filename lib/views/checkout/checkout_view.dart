@@ -5,6 +5,7 @@ import '../../common/appbar/common_app_bar.dart';
 import '../../common/buttons/app_button.dart';
 import '../../common/cards/app_card.dart';
 import '../../common/snackbars/app_snackbar.dart';
+import '../../core/cart/cart_coordinator.dart';
 import '../../core/location/address_location_coordinator.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/app_currency.dart';
@@ -890,6 +891,7 @@ class _CheckoutViewState extends State<CheckoutView> {
         if (!mounted) return;
         await CartCoordinator.instance.syncFromServer();
         await _cartVm.init();
+        if (!mounted) return;
         AppSnackbar.error(
           context,
           res.message ?? 'Failed to place order. Please check item stock and retry.',
@@ -899,6 +901,7 @@ class _CheckoutViewState extends State<CheckoutView> {
       if (!mounted) return;
       await CartCoordinator.instance.syncFromServer();
       await _cartVm.init();
+      if (!mounted) return;
       final err = e is ApiServiceException ? e.message : e.toString();
       AppSnackbar.error(context, err);
     } finally {

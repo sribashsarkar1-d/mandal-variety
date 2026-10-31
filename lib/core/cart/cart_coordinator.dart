@@ -249,6 +249,8 @@ class CartCoordinator {
         name: item.name,
         imageUrl: item.imageUrl,
         unitPrice: item.unitPrice,
+        originalPrice: item.originalPrice,
+        discountTag: item.discountTag,
         quantity: resolvedQuantity,
       ),
     );
@@ -281,11 +283,52 @@ class CartCoordinator {
 
     final items = response.data?.items ?? <CartDetailItem>[];
 
+    final existingItems = await _repository.getItems();
+    final existingMap = <String, CartItemModel>{
+      for (final e in existingItems) e.productId: e,
+    };
+
+    // Preload product catalog from ApiService to resolve discounts if the backend cart API omitted discount_price
+    Map<String, ({double price, double? originalPrice, String? discountTag})>? catalogMap;
+    final needsCatalogLookup = items.any((item) {
+      final pid = item.productId?.toString();
+      final existing = pid != null ? existingMap[pid] : null;
+      final hasLocalDiscount = existing != null && existing.hasDiscount;
+      final hasServerDiscount = item.originalPrice != null && double.tryParse(item.originalPrice!) != null;
+      return !hasLocalDiscount && !hasServerDiscount;
+    });
+
+    if (needsCatalogLookup) {
+      try {
+        final catalog = await _apiService.getProducts();
+        final mappedList = (catalog.data ?? const [])
+            .map((d) {
+              final id = d.id?.toString() ?? '';
+              final base = d.price?.toDouble() ?? 0.0;
+              final disc = d.discountPrice?.toDouble();
+              double finalP = base;
+              double? origP;
+              if (disc != null && disc > 0 && disc < base) {
+                finalP = disc;
+                origP = base;
+              }
+              final pct = d.discountPercentage;
+              final tag = pct != null && pct > 0
+                  ? '$pct% OFF'
+                  : (origP != null ? '${(((origP - finalP) / origP) * 100).round()}% OFF' : null);
+              return MapEntry(id, (price: finalP, originalPrice: origP, discountTag: tag));
+            })
+            .where((e) => e.key.isNotEmpty);
+        catalogMap = {for (final e in mappedList) e.key: e.value};
+      } catch (_) {}
+    }
+
     await _repository.clear();
     for (final item in items) {
       final productId = item.productId?.toString();
       final name = (item.name ?? '').trim();
-      final price = double.tryParse((item.price ?? '').toString()) ?? 0.0;
+      final serverPrice = double.tryParse((item.price ?? '').toString()) ?? 0.0;
+      final serverOriginalPrice = double.tryParse((item.originalPrice ?? '').toString());
       final quantity = item.quantity ?? 1;
 
       if (productId == null || productId.isEmpty) {
@@ -296,12 +339,41 @@ class CartCoordinator {
       final stockQty = item.availableStock ?? item.stockQuantity;
       final inStock = item.isInStock ?? (stockQty != null ? stockQty > 0 : true);
 
+      final existing = existingMap[productId];
+      double effectiveUnitPrice = serverPrice;
+      double? effectiveOriginalPrice = serverOriginalPrice;
+      String? effectiveDiscountTag = item.discountPercentage != null && item.discountPercentage! > 0
+          ? '${item.discountPercentage}% OFF'
+          : null;
+
+      // 1. If catalog lookup found discount:
+      if (catalogMap != null && catalogMap.containsKey(productId)) {
+        final cat = catalogMap[productId]!;
+        if (cat.originalPrice != null && cat.originalPrice! > cat.price) {
+          effectiveUnitPrice = cat.price;
+          effectiveOriginalPrice = cat.originalPrice;
+          effectiveDiscountTag ??= cat.discountTag;
+        }
+      }
+
+      // 2. If existing local item had a verified discount price:
+      if (existing != null) {
+        if (existing.unitPrice > 0 && (effectiveUnitPrice <= 0 || existing.unitPrice < effectiveUnitPrice)) {
+          effectiveOriginalPrice = effectiveUnitPrice > 0 ? effectiveUnitPrice : existing.originalPrice;
+          effectiveUnitPrice = existing.unitPrice;
+        }
+        effectiveOriginalPrice ??= existing.originalPrice;
+        effectiveDiscountTag ??= existing.discountTag;
+      }
+
       await _repository.upsertItem(
         CartItemModel(
           productId: productId,
           name: displayName,
           imageUrl: _apiService.resolveImageUrl(item.images),
-          unitPrice: price,
+          unitPrice: effectiveUnitPrice,
+          originalPrice: effectiveOriginalPrice,
+          discountTag: effectiveDiscountTag,
           quantity: quantity,
           maxQuantity: stockQty,
           availableStock: stockQty,

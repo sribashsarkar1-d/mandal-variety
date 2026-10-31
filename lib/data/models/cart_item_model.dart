@@ -9,6 +9,8 @@ class CartItemModel {
   final String name;
   final String? imageUrl;
   final double unitPrice;
+  final double? originalPrice;
+  final String? discountTag;
   final int quantity;
   final int? maxQuantity;
   final int? availableStock;
@@ -18,12 +20,17 @@ class CartItemModel {
     required this.productId,
     required this.name,
     required this.unitPrice,
+    this.originalPrice,
+    this.discountTag,
     required this.quantity,
     this.maxQuantity,
     this.imageUrl,
     this.availableStock,
     this.isInStock,
   });
+
+  bool get hasDiscount =>
+      originalPrice != null && originalPrice! > unitPrice;
 
   bool get isOutOfStock =>
       (isInStock == false) ||
@@ -41,6 +48,8 @@ class CartItemModel {
     String? name,
     String? imageUrl,
     double? unitPrice,
+    double? originalPrice,
+    String? discountTag,
     int? quantity,
     int? maxQuantity,
     int? availableStock,
@@ -51,6 +60,8 @@ class CartItemModel {
       name: name ?? this.name,
       imageUrl: imageUrl ?? this.imageUrl,
       unitPrice: unitPrice ?? this.unitPrice,
+      originalPrice: originalPrice ?? this.originalPrice,
+      discountTag: discountTag ?? this.discountTag,
       quantity: quantity ?? this.quantity,
       maxQuantity: maxQuantity ?? this.maxQuantity,
       availableStock: availableStock ?? this.availableStock,
@@ -64,6 +75,8 @@ class CartItemModel {
       'name': name,
       'imageUrl': imageUrl,
       'unitPrice': unitPrice,
+      'originalPrice': originalPrice,
+      'discountTag': discountTag,
       'quantity': quantity,
       'maxQuantity': maxQuantity,
       'availableStock': availableStock,
@@ -72,19 +85,29 @@ class CartItemModel {
   }
 
   static CartItemModel fromJson(Map<String, dynamic> json) {
-    final rawPrice = json['unitPrice'];
+    final rawPrice = json['unitPrice'] ?? json['price'];
+    final rawOriginal = json['originalPrice'] ?? json['original_price'];
+    final rawTag = json['discountTag'] ?? json['discount_tag'];
     final rawQty = json['quantity'];
     final rawMax = json['maxQuantity'];
     final rawStock = json['availableStock'] ?? json['stock_quantity'] ?? json['stock'];
     final rawInStock = json['isInStock'] ?? json['is_in_stock'];
 
+    final parsedPrice = rawPrice is num
+        ? rawPrice.toDouble()
+        : double.tryParse(rawPrice?.toString() ?? '') ?? 0.0;
+
+    final parsedOriginal = rawOriginal is num
+        ? rawOriginal.toDouble()
+        : double.tryParse(rawOriginal?.toString() ?? '');
+
     return CartItemModel(
       productId: (json['productId'] ?? json['product_id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
       imageUrl: json['imageUrl']?.toString() ?? json['image']?.toString(),
-      unitPrice: rawPrice is num
-          ? rawPrice.toDouble()
-          : double.tryParse(rawPrice?.toString() ?? '') ?? 0.0,
+      unitPrice: parsedPrice,
+      originalPrice: parsedOriginal,
+      discountTag: rawTag?.toString(),
       quantity: rawQty is int
           ? rawQty
           : int.tryParse(rawQty?.toString() ?? '') ?? 1,

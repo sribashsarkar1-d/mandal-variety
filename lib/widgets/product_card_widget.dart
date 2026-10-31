@@ -119,12 +119,17 @@ class _ProductCardWidgetState extends State<ProductCardWidget> {
     setState(() => _isCartActionLoading = true);
     try {
       final double unitPrice = double.tryParse(widget.priceText.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      final double? originalPrice = widget.oldPriceText != null
+          ? double.tryParse(widget.oldPriceText!.replaceAll(RegExp(r'[^0-9.]'), ''))
+          : null;
       final result = await CartCoordinator.instance.addItem(
         CartItemModel(
           productId: widget.productId.toString(),
           name: widget.name,
           imageUrl: widget.imageUrl,
           unitPrice: unitPrice,
+          originalPrice: originalPrice,
+          discountTag: widget.discountBadgeText,
           quantity: 1,
         ),
       );
